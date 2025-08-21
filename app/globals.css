@@ -1,26 +1,451 @@
-@import "tailwindcss";
+/* ===== Reset mínimo ===== */
+*{ box-sizing: border-box; }
+html,body{ margin:0; padding:0; }
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* ===== Tema (oscuro por defecto) ===== */
+:root{
+  --bg:#0f172a;           /* slate-900 */
+  --panel:#0b1220;        /* slate-950-ish */
+  --card:#111827;         /* gray-900 */
+  --ring:rgba(255,255,255,.06);
+  --text:#e5e7eb;         /* gray-200 */
+  --muted:#94a3b8;        /* slate-400 */
+  --chip:#1f2937;         /* gray-800 */
+  --ok:#10b981;           /* emerald-500 */
+  --warn:#f59e0b;         /* amber-500 */
+  --bad:#ef4444;          /* red-500 */
+  --accent:#e11d48;       /* rose-600 */
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+/* Claro opcional (si usás data-theme="bright") */
+:root[data-theme="bright"]{
+  --bg:#f8fafc;
+  --panel:#ffffff;
+  --card:#ffffff;
+  --ring:rgba(0,0,0,.08);
+  --text:#0f172a;
+  --muted:#475569;
+  --chip:#e5e7eb;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html{ background:var(--bg); }
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family: ui-sans-serif, -apple-system, Segoe UI, Roboto, Helvetica, Arial, Apple Color Emoji, Segoe UI Emoji;
+  -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
+  font-size: 13px;        /* 📱 móvil super compacto */
+  line-height: 1.45;
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* ===== Contenedores principales ===== */
+/* 👇 flex column para sticky footer */
+.main-container{
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+.header{
+  position: sticky; top:0; z-index:30;
+  background: var(--panel);
+  border-bottom: 1px solid var(--ring);
+}
+.header .header-content{
+  max-width: 1152px; margin:0 auto;
+  padding: 8px 10px;      /* 📱 chico */
+  display:flex; align-items:center; justify-content:space-between; gap:8px;
+}
+.title-glitch{ margin:0; font-weight:700; font-size:15px; letter-spacing:-0.01em; }
+
+/* 👇 el contenedor se estira y empuja el footer */
+.content-container{
+  max-width: 1152px; margin:0 auto;
+  padding: 10px;          /* 📱 chico */
+  flex: 1 1 auto;
+}
+
+/* ===== Form URL (columna en móvil) ===== */
+.input-container{ display:flex; flex-direction:column; gap:8px; }
+.input-url{
+  width:100%; background: var(--panel); color:var(--text);
+  border:1px solid var(--ring); border-radius:12px;
+  padding: 9px 11px; font-size:13px; outline:none;
+  flex: 1 1 720px;
+  min-width: 900px;        /* 🔒 NO tocar tamaños del buscador */
+}
+.input-url::placeholder{ color: var(--muted); }
+
+.btn-audit{
+  background: var(--ok); color:#062e22; border:0;
+  border-radius:12px; padding: 9px 11px; font-size:13px; font-weight:700; cursor:pointer;
+}
+.btn-audit:disabled{ opacity:.6; cursor:not-allowed; }
+
+.error-message{
+  margin-top:8px; padding:8px 10px; border-radius:10px;
+  background:#3f1a1a; color:#ffdada; border:1px solid #5b2323;
+}
+
+/* ===== Tarjetas / chips ===== */
+.card{
+  background: var(--card);
+  border:1px solid var(--ring);
+  border-radius: 14px;
+  padding: 10px;          /* 📱 chico */
+  box-shadow: 0 6px 18px rgba(0,0,0,.18);
+}
+.card-subtle{
+  background: var(--panel);
+  border:1px dashed var(--ring);
+  border-radius:12px; padding:10px;
+}
+.muted{ color: var(--muted); }
+.small{ font-size: 11.5px; }
+
+.score-chip{
+  display:inline-flex; align-items:center; justify-content:center;
+  min-width:24px; height:20px; padding:0 6px;
+  border-radius:8px; font-weight:800; font-size:11px; background: var(--chip);
+}
+.chip-green{ background:#16a34a; color:#052e16; }
+.chip-amber{ background:#f59e0b; color:#3b1a00; }
+.chip-red{ background:#ef4444; color:#3a0a0a; }
+
+.badge-green{ background:#065f46; color:#d1fae5; }
+.badge-amber{ background:#854d0e; color:#fffbeb; }
+.badge-red{ background:#7f1d1d; color:#fee2e2; }
+
+.pill{
+  padding:2px 8px; border-radius:999px; font-size:11px; font-weight:700;
+  background: var(--chip); color: var(--text);
+}
+.pill-ok{ background:#064e3b; color:#d1fae5; }
+.pill-bad{ background:#4c1d1d; color:#fecaca; }
+
+/* ===== Banner Accesible/Bloqueado ===== */
+.score-chip[title]{ margin-left:auto; }
+
+/* ===== GRID PRINCIPAL (📱 1 columna) ===== */
+.grid-container{
+  margin-top:10px;
+  display:grid; grid-template-columns: 1fr;
+  gap: 10px;
+}
+
+/* ==== Izquierda: Score + Breakdown + Sugerencias ==== */
+.score-section{ padding:10px; }
+.score-header{ display:flex; flex-direction:column; gap:8px; }
+.score-details .score-value{ font-size:15px; font-weight:800; letter-spacing:-0.01em; }
+.score-bar{ margin-top:4px; height:6px; width:100%; background:#1f2937; border-radius:999px; overflow:hidden; }
+.score-progress{ height:100%; background:var(--ok); }
+.progress-amber{ background:var(--warn); }
+.progress-red{ background:var(--bad); }
+
+/* Categorías compactas y “repartidas” */
+.categories{
+  margin-top:10px;
+  display:grid; grid-template-columns: 1fr; gap:8px;
+}
+.category-card{ padding:8px; }
+.category-header{ display:flex; align-items:center; justify-content:space-between; gap:8px; }
+.category-header h3{ margin:0; font-size:13px; font-weight:700; }
+.category-score{
+  display:inline-flex; align-items:center; justify-content:center;
+  min-width:22px; height:18px; padding:0 6px;
+  border-radius:8px; font-size:10.5px; font-weight:800; background: var(--chip);
+}
+.category-items{
+  margin:6px 0 0; padding:0; list-style:none;
+  display:flex; flex-direction:column; gap:6px;
+}
+.category-item{
+  display:flex; align-items:center; justify-content:space-between; gap:6px;
+  font-size:12px; word-break: break-word;
+}
+
+/* Sugerencias */
+.suggestions{ margin-top:10px; }
+.suggestions h3{ margin:0 0 6px; font-size:13px; }
+.suggestion-list{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:8px; }
+.suggestion-item{
+  display:flex; justify-content:space-between; align-items:flex-start; gap:8px;
+  background: var(--panel); border:1px solid var(--ring);
+  padding:8px 10px; border-radius:12px; font-size:12px;
+}
+
+/* ==== Derecha: Extras ==== */
+.extra-section{ padding:10px; }
+.extra-header h3{ margin:0 0 8px; font-size:13px; }
+.extra-info{ display:flex; flex-direction:column; gap:8px; }
+.meta-description,.robots-info,.security-info{
+  display:flex; align-items:center; justify-content:space-between; gap:8px;
+  background: var(--panel); border:1px solid var(--ring);
+  padding:8px 10px; border-radius:10px; font-size:12px;
+}
+.extras-suggest{ margin-top:8px; }
+.extras-list{ margin:6px 0 0; padding-left:16px; }
+
+/* Botón exportar */
+.btn-download{
+  background:#0ea5e9; color:#062132; border:0;
+  border-radius:12px; padding:10px 12px; font-weight:800; cursor:pointer; font-size:13px;
+}
+.btn-download:disabled{ opacity:.65; cursor:not-allowed; }
+
+/* ====== Breakpoints ====== */
+@media (min-width:480px){
+  body{ font-size: 13.5px; }
+  .title-glitch{ font-size:16px; }
+  .categories{ grid-template-columns: repeat(2, minmax(0,1fr)); }
+}
+@media (min-width:768px){
+  .header .header-content{ padding:12px 14px; }
+  .title-glitch{ font-size:18px; }
+  .input-container{ flex-direction:row; }
+  .input-url, .btn-audit{ font-size:14px; padding:11px 13px; }
+  .score-details .score-value{ font-size:18px; }
+  .category-header h3{ font-size:14px; }
+}
+@media (min-width:1024px){
+  .grid-container{ grid-template-columns: 2fr 1fr; align-items:start; }
+  .categories{ grid-template-columns: repeat(3, minmax(0,1fr)); }
+  .header .header-content{ padding:14px 16px; }
+  .title-glitch{ font-size:20px; }
+  .card, .score-section, .extra-section{ padding:14px; }
+}
+
+/* ===== Footer (pegado al final) ===== */
+.site-footer{
+  margin-top: auto;             /* empuja al fondo */
+  background: var(--panel);
+  border-top: 1px solid var(--ring);
+}
+.site-footer .footer-inner{
+  max-width: 1152px;
+  margin: 0 auto;
+  padding: 10px 12px;     /* compacto en teléfono */
+  text-align: center;
+  color: var(--muted);
+  font-size: 12px;
+}
+.site-footer .brand{
+  color: var(--text);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+@media (min-width:1024px){
+  .site-footer .footer-inner{ font-size: 13px; padding: 12px 16px; }
+}
+
+/* ========== COSO SKIN (solo estilos, sin tocar tamaños del buscador) ========== */
+
+/* Fondo radial con glow */
+body{
+  background:
+    radial-gradient(1200px 600px at 15% 0%, rgba(217,70,239,0.12), transparent 60%),
+    radial-gradient(900px 500px at 85% 8%, rgba(79,70,229,0.12), transparent 65%),
+    linear-gradient(180deg, #0b1020 0%, #0b1020 100%);
+}
+
+/* Header translúcido con blur */
+.header{
+  background: color-mix(in srgb, var(--panel) 70%, transparent);
+  -webkit-backdrop-filter: saturate(120%) blur(10px);
+  backdrop-filter: saturate(120%) blur(10px);
+  border-bottom: 1px solid color-mix(in srgb, var(--ring) 70%, transparent);
+}
+
+/* Tarjetas “glassmorphism” */
+.card{
+  background: color-mix(in srgb, #ffffff 5%, transparent);
+  border: 1px solid color-mix(in srgb, #ffffff 10%, transparent);
+  box-shadow:
+    0 10px 30px rgba(0,0,0,.35),
+    inset 0 1px 0 rgba(255,255,255,.04);
+  border-radius: 20px;
+}
+
+/* Subtarjetas */
+.card-subtle{
+  background: color-mix(in srgb, #ffffff 4%, transparent);
+  border: 1px dashed color-mix(in srgb, #ffffff 12%, transparent);
+  border-radius: 16px;
+}
+
+/* Tipografía y colores */
+.title-glitch{ letter-spacing: -0.02em; }
+.muted{ color: color-mix(in srgb, var(--muted) 92%, #fff 8%); }
+
+/* Botones con gradiente violeta/índigo */
+.btn-audit, .btn-download{
+  background: linear-gradient(135deg, #d946ef 0%, #6366f1 100%);
+  color: #0b1020;
+  border: 0;
+  border-radius: 16px;
+  font-weight: 800;
+  box-shadow:
+    0 8px 22px rgba(99,102,241,.28),
+    inset 0 1px 0 rgba(255,255,255,.25);
+  transition: transform .05s ease, filter .15s ease;
+}
+.btn-audit:hover, .btn-download:hover{ filter: brightness(1.06); }
+.btn-audit:active, .btn-download:active{ transform: translateY(1px); }
+
+/* Input estilo chip oscuro (sin cambiar ancho/alto) */
+.input-url{
+  background: color-mix(in srgb, var(--panel) 75%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ring) 70%, transparent);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.04);
+  border-radius: 14px;
+}
+
+/* Chips/píldoras con brillo */
+.score-chip, .category-score, .pill{
+  background: color-mix(in srgb, var(--chip) 80%, transparent);
+  border: 1px solid color-mix(in srgb, #ffffff 12%, transparent);
+  box-shadow: inset 1px 1px 0 rgba(255,255,255,.06);
+}
+.chip-green, .badge-green{ background: color-mix(in srgb, #16a34a 70%, #052e16 30%); color:#e7fbe9; }
+.chip-amber, .badge-amber{ background: color-mix(in srgb, #f59e0b 75%, #3b1a00 25%); color:#fff7e6; }
+.chip-red, .badge-red{ background: color-mix(in srgb, #ef4444 75%, #3a0a0a 25%); color:#ffe7e7; }
+
+/* Barra de progreso con degradé y glow */
+.score-bar{ background: rgba(148,163,184,.22); }
+.score-progress{
+  background: linear-gradient(90deg, #22c55e 0%, #10b981 100%);
+  box-shadow: 0 0 16px rgba(16,185,129,.35);
+}
+.progress-amber{
+  background: linear-gradient(90deg, #f59e0b 0%, #fbbf24 100%);
+  box-shadow: 0 0 16px rgba(245,158,11,.30);
+}
+.progress-red{
+  background: linear-gradient(90deg, #ef4444 0%, #f87171 100%);
+  box-shadow: 0 0 16px rgba(239,68,68,.28);
+}
+
+/* Listas de categoría: separadores suaves */
+.category-items{ gap: 8px; }
+.category-item{
+  padding: 6px 0;
+  border-bottom: 1px dashed color-mix(in srgb, var(--ring) 70%, transparent);
+}
+.category-item:last-child{ border-bottom: 0; }
+
+/* Aside “Extras” */
+.extra-section .extra-info > div{
+  background: color-mix(in srgb, #ffffff 4%, transparent);
+  border: 1px solid color-mix(in srgb, #ffffff 10%, transparent);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.05);
+  border-radius: 12px;
+}
+
+/* Footer con blur y gradiente en marca */
+.site-footer{
+  background: color-mix(in srgb, var(--panel) 72%, transparent);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  border-top: 1px solid color-mix(in srgb, var(--ring) 70%, transparent);
+}
+.site-footer .brand{
+  background: linear-gradient(90deg, #d946ef, #6366f1);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* === COSO SKIN · Fondo más clarito === */
+:root{
+  --bg:#12182d;     /* antes: #0f172a */
+  --panel:#141c31;  /* un poco más claro */
+  --card:#19243d;   /* tarjetas un toque más claras */
+}
+body{
+  background:
+    radial-gradient(1200px 650px at 12% -8%, rgba(217,70,239,.20), transparent 62%),
+    radial-gradient(1000px 600px at 88% 2%,  rgba(99,102,241,.18), transparent 68%),
+    linear-gradient(180deg, #11172a 0%, #131b31 100%);
+}
+.header{
+  background: color-mix(in srgb, var(--panel) 58%, transparent);
+  -webkit-backdrop-filter: saturate(120%) blur(10px);
+  backdrop-filter: saturate(120%) blur(10px);
+  border-bottom: 1px solid color-mix(in srgb, var(--ring) 80%, transparent);
+}
+.card{
+  background: color-mix(in srgb, #ffffff 9%, transparent);
+  border: 1px solid color-mix(in srgb, #ffffff 16%, transparent);
+  box-shadow: 0 10px 30px rgba(0,0,0,.30), inset 0 1px 0 rgba(255,255,255,.05);
+}
+.card-subtle{
+  background: color-mix(in srgb, #ffffff 7%, transparent);
+  border: 1px dashed color-mix(in srgb, #ffffff 18%, transparent);
+}
+.extra-section .extra-info > div{
+  background: color-mix(in srgb, #ffffff 7%, transparent);
+  border: 1px solid color-mix(in srgb, #ffffff 16%, transparent);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.05);
+}
+.score-chip, .category-score, .pill{
+  background: color-mix(in srgb, var(--chip) 70%, #ffffff 6%);
+  border: 1px solid color-mix(in srgb, #ffffff 14%, transparent);
+}
+
+/* ====== MODO PDF: simplifica estilos para html2canvas ====== */
+/* Se activa en el DOM clonado: onclone => doc.documentElement.classList.add("pdf-mode") */
+.pdf-mode body{
+  background: #ffffff !important;
+}
+.pdf-mode .header{
+  background: #0b1220 !important;
+  border-bottom: 1px solid rgba(255,255,255,.06) !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+.pdf-mode .card{
+  background: #111827 !important;
+  border: 1px solid rgba(255,255,255,.10) !important;
+  box-shadow: none !important;
+  border-radius: 14px !important;
+}
+.pdf-mode .card-subtle,
+.pdf-mode .extra-section .extra-info > div{
+  background: #0b1220 !important;
+  border: 1px solid rgba(255,255,255,.12) !important;
+  box-shadow: none !important;
+}
+.pdf-mode .score-chip,
+.pdf-mode .category-score,
+.pdf-mode .pill{
+  background: #1f2937 !important;
+  border: 1px solid rgba(255,255,255,.12) !important;
+  box-shadow: none !important;
+  color: #e5e7eb !important;
+}
+.pdf-mode .score-bar{ background: #1f2937 !important; }
+.pdf-mode .score-progress{ background: #10b981 !important; box-shadow: none !important; }
+.pdf-mode .progress-amber{ background: #f59e0b !important; }
+.pdf-mode .progress-red{ background: #ef4444 !important; }
+.pdf-mode .category-items{ gap: 6px !important; }
+.pdf-mode .category-item{
+  border-bottom: 1px dashed rgba(255,255,255,.12) !important;
+  padding: 6px 0 !important;
+}
+.pdf-mode .category-item:last-child{ border-bottom: 0 !important; }
+.pdf-mode .btn-audit,
+.pdf-mode .btn-download{
+  background: #10b981 !important;
+  color: #062e22 !important;
+  box-shadow: none !important;
+  border-radius: 12px !important;
+}
+/* nada de animaciones/filters durante la captura */
+.pdf-mode *{
+  animation: none !important;
+  transition: none !important;
+  filter: none !important;
+}
+
+.site-footer .footer-inner a:hover {
+  text-decoration: underline; /* o quitá esta línea si no querés hover */
 }
