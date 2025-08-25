@@ -441,4 +441,5 @@ export async function GET(req: NextRequest) {
       sitemaps: lines.filter((l) => l.startsWith("sitemap:")),
     },
   });
+  
 }

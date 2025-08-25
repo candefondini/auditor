@@ -21,7 +21,7 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   metadataBase: new URL("https://promte.ar"), // <-- ajustá dominio final
   title: {
-    default: "OAI Accessibility Auditor",
+    default: "IA Friendly",
     template: "%s | promte.ar",
   },
   description: "Auditoría de accesibilidad para OAI-SearchBot.",
@@ -38,21 +38,21 @@ export const metadata: Metadata = {
     type: "website",
     url: "https://promte.ar",
     siteName: "promte.ar",
-    title: "OAI Accessibility Auditor",
+    title: "IA Friendly",
     description: "Auditoría de accesibilidad para OAI-SearchBot.",
     images: [
       {
         url: "/og.png", // poné og.png en /public (1200x630 recomendado)
         width: 1200,
         height: 630,
-        alt: "OAI Accessibility Auditor",
+        alt: "IA Friendly",
       },
     ],
     locale: "es_AR",
   },
   twitter: {
     card: "summary_large_image",
-    title: "OAI Accessibility Auditor",
+    title: "IA Friendly",
     description: "Auditoría de accesibilidad para OAI-SearchBot.",
     images: ["/og.png"],
     // site: "@tuCuenta", creator: "@tuCuenta" // opcional
@@ -110,7 +110,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     __html: JSON.stringify({
       "@context": "https://schema.org",
       "@type": "WebApplication",
-      "name": "OAI Accessibility Auditor",
+      "name": "IA Friendly",
       "url": "https://promte.ar",
       "applicationCategory": "DeveloperApplication",
       "operatingSystem": "All"

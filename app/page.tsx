@@ -2,6 +2,8 @@
 
 import { useState, useRef } from "react";
 import { motion } from "framer-motion";
+import LeadCTA from "./components/LeadCTA";
+
 
 // Tipado de la respuesta del endpoint /api/audit
 type OaiRes = {
@@ -107,17 +109,21 @@ export default function Home() {
     if (!data) return;
     setExporting(true);
     try {
-      const { jsPDF } = await import("jspdf");
-      const autoTable = (await import("jspdf-autotable")).default;
+      // ✅ compatible con default o named export
+const jsPDFmod = await import("jspdf");
+const JsPDF = (jsPDFmod as any).jsPDF || (jsPDFmod as any).default;
 
-      const doc = new jsPDF({ unit: "pt", format: "a4" });
+const autoTableMod = await import("jspdf-autotable");
+const autoTable = (autoTableMod as any).default;
+
+const doc = new JsPDF({ unit: "pt", format: "a4" });
       const margin = 40;
 
       // Header
       const now = new Date();
       doc.setFont("helvetica", "bold");
       doc.setFontSize(16);
-      doc.text("OAI Accessibility Auditor — Reporte", margin, 52);
+      doc.text("IA Friendly — Reporte", margin, 52);
       doc.setFont("helvetica", "normal");
       doc.setFontSize(10);
       doc.text(`Generado: ${now.toLocaleString()}`, margin, 70);
@@ -272,7 +278,7 @@ export default function Home() {
         doc.setFontSize(9);
         doc.setTextColor(120);
         doc.text(
-          `OAI Accessibility Auditor • ${data.finalUrl || data.url}`,
+          `IA Friendly • ${data.finalUrl || data.url}`,
           margin,
           doc.internal.pageSize.getHeight() - 20
         );
@@ -302,8 +308,8 @@ export default function Home() {
         transition={{ duration: 0.35 }}
       >
         <div className="header-content">
-          <h1 className="title-glitch" data-text="OAI Accessibility Auditor">
-            OAI Accessibility Auditor
+          <h1 className="title-glitch" data-text="IA Friendly">
+            IA Friendly
           </h1>
         </div>
       </motion.header>
@@ -505,6 +511,7 @@ export default function Home() {
                 </motion.aside>
               </div>
             </div>
+<LeadCTA score={data.overall} url={data.finalUrl || data.url} />
 
             <motion.div
               initial={{ opacity: 0, y: 8 }}
@@ -523,6 +530,7 @@ export default function Home() {
           </>
         )}
       </div>
+      
 
       <footer className="site-footer" aria-label="Pie de página">
   <div className="footer-inner">
