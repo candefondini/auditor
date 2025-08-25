@@ -511,7 +511,10 @@ const doc = new JsPDF({ unit: "pt", format: "a4" });
                 </motion.aside>
               </div>
             </div>
-<LeadCTA score={data.overall} url={data.finalUrl || data.url} />
+            
+<div style={{ marginTop: 28, marginBottom: 12 }}>
+  <LeadCTA score={data.overall} url={data.finalUrl || data.url} />
+</div>
 
             <motion.div
               initial={{ opacity: 0, y: 8 }}
