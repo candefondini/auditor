@@ -172,3 +172,42 @@ body {
   .title-glitch { font-size:20px; }
   .site-footer .footer-inner { padding:20px 18px; font-size:13px; }
 }
+
+@media (max-width: 640px) {
+  .content-container {
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    width:100%; max-width:none;
+    min-height:calc(100dvh - 100px);
+    padding:0 16px;
+  }
+
+  .input-container {
+    width:100%; max-width:none;
+    flex-direction:column; align-items:center; gap:18px;
+    margin:0;
+  }
+
+  /* Input grande */
+  .input-url {
+    width:100%;
+    max-width:100%;
+    padding:18px 20px;       /* alto y cómodo */
+    font-size:16px;
+    text-align:center;
+    border-radius:14px;
+  }
+
+  
+  /* Botón un poco más grande */
+.btn-audit {
+  width: auto;              /* no ocupa todo el ancho */
+  padding: 12px 20px;       /* ⬅️ un poco más alto y ancho */
+  font-size: 15px;          /* texto un poquito más grande */
+  border-radius: 12px;
+}
+
+
+  .header .header-content { padding:16px 18px; }
+  .title-glitch { font-size:20px; }
+  .site-footer .footer-inner { padding:20px 18px; font-size:13px; }
+}
