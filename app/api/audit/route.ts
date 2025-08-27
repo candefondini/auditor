@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getPerModelScores } from "./ia";
 
 export const runtime = "nodejs";
 
@@ -67,7 +68,7 @@ export async function GET(req: NextRequest) {
     fetchSafe(new URL("/robots.txt", url).toString(), ua),
   ]);
 
-  // Corte temprano por inexistencia / inaccesible
+  // Corte temprano
   if (page.status === 404 || page.status === 410) {
     return NextResponse.json({ error: "Esta página no existe." }, { status: page.status });
   }
@@ -89,6 +90,7 @@ export async function GET(req: NextRequest) {
     (html.match(/<link[^>]+rel=["']?canonical["']?[^>]*href=["']?([^"'>\s]+)/i)?.[1] || "").trim();
   const contentType = (getHeader(page.headers, "content-type") || "").toLowerCase();
   const lang = (html.match(/<html[^>]+lang=["']?([^"'>\s]+)/i)?.[1] || "").toLowerCase();
+
   const jsonLd = [...html.matchAll(/<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)].map(
     (m) => m[1]
   );
@@ -104,14 +106,14 @@ export async function GET(req: NextRequest) {
   const https = url.startsWith("https://");
   const paywallHint = /paywall|suscr[ií]base|subscribe|metered/i.test(html.toLowerCase());
 
-  // soft 404 (200 pero aparenta 404)
+  // soft 404
   const lower = html.toLowerCase();
   const looks404 =
     /(^|\b)(404|not found|p[aá]gina no encontrada|pagina no encontrada|no se encontr[oó]|page not found)(\b|$)/i.test(
       lower
     ) || /<title[^>]*>[^<]*(404|not found)/i.test(html);
 
-  // Meta description (para Extras)
+  // Meta description (Extras)
   const metaDescMatch = html.match(
     /<meta[^>]+name=["']description["'][^>]*content=["']([^"']*)["'][^>]*>/i
   );
@@ -119,7 +121,7 @@ export async function GET(req: NextRequest) {
   const metaDescLen = metaDescription.length;
   const metaDescOk = metaDescLen >= 50 && metaDescLen <= 160;
 
-  // robots.txt (muy simple)
+  // robots.txt (simple)
   const robotsTxt = (robotsRes.text || "").toLowerCase();
   const lines = robotsTxt.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
 
@@ -128,8 +130,7 @@ export async function GET(req: NextRequest) {
   for (const l of lines) {
     const m = l.match(/^(user-agent|disallow)\s*:\s*(.+)$/i);
     if (!m) continue;
-    const k = m[1].toLowerCase(),
-      v = m[2].trim().toLowerCase();
+    const k = m[1].toLowerCase(), v = m[2].trim().toLowerCase();
     if (k === "user-agent") {
       currentUA = v;
       groups[currentUA] = groups[currentUA] || [];
@@ -422,6 +423,43 @@ export async function GET(req: NextRequest) {
     extrasSuggestions.push({ title: "Proteger contra clickjacking (X-Frame-Options o frame-ancestors en CSP)" });
   if (!robotsAllowedGPT) extrasSuggestions.push({ title: "robots.txt bloquea a gptbot (revisar reglas)" });
 
+  // ====== IA Readiness / Per-model scores (usando TUS nombres) ======
+  const auditedUrl = page.url || url;
+
+  // Flatten de items
+  const flatItems: Record<string, any> = {};
+  for (const b of breakdown) Object.assign(flatItems, b.items || {});
+
+  const httpsFlag     = /^https:\/\//i.test(auditedUrl);
+  const status2xx     = !!flatItems["http2xx"];
+  const textRatioOk   = !!flatItems["textRatioOk"];
+  const hasCanonical  = !!flatItems["canonicalOk"];
+  const schemaOk      = !!flatItems["schemaOk"];
+  const h1Ok          = !!flatItems["h1Ok"];
+
+  let perModelScores: Record<string, number> | undefined;
+  let iaReadiness: number | undefined;
+
+  try {
+    const scored = await getPerModelScores({
+      url: auditedUrl,
+      https: httpsFlag,
+      status2xx,
+      textRatioOk,
+      hasCanonical,
+      schema: schemaOk,
+      h1: h1Ok,
+    });
+
+    perModelScores = scored.perModelScores;
+    iaReadiness = scored.iaReadiness;
+
+    // anexamos hints del scorer a extrasSuggestions
+    for (const h of scored.hints) extrasSuggestions.push({ title: h });
+  } catch (e) {
+    console.error("[IA readiness] error:", e);
+  }
+
   return NextResponse.json({
     url,
     finalUrl: page.url,
@@ -434,6 +472,8 @@ export async function GET(req: NextRequest) {
     suggestions,
     extras,
     extrasSuggestions,
+    perModelScores,   // 👈 nuevo
+    iaReadiness,      // 👈 nuevo
     raw: {
       status: page.status,
       contentType,
@@ -441,5 +481,4 @@ export async function GET(req: NextRequest) {
       sitemaps: lines.filter((l) => l.startsWith("sitemap:")),
     },
   });
-  
 }

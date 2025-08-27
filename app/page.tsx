@@ -14,6 +14,14 @@ type OaiRes = {
   accessibleForOAI: boolean;
   blockedReasons: string[];
   overall: number;
+  perModelScores?: {
+  chatgpt?: number;
+  gemini?: number;
+  copilot?: number;
+  perplexity?: number;
+  claude?: number;
+};
+iaReadiness?: number;
   breakdown: {
     category: string;
     score: number;
@@ -147,6 +155,34 @@ const doc = new JsPDF({ unit: "pt", format: "a4" });
         margin: { left: margin, right: margin },
       });
       let y = (doc as any).lastAutoTable.finalY + 12;
+
+      // --- Preparación para IA (global + por modelo) ---
+if (typeof data.iaReadiness === "number" || data.perModelScores) {
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(12);
+  doc.text("Preparación para IA", margin, y);
+  y += 6;
+
+  const per = data.perModelScores || {};
+  autoTable(doc, {
+    startY: y,
+    head: [["Métrica", "Valor"]],
+    body: [
+      ["Preparación global", typeof data.iaReadiness === "number" ? `${data.iaReadiness}/100` : "—"],
+      ["ChatGPT", typeof per.chatgpt === "number" ? `${per.chatgpt}/100` : "—"],
+      ["Gemini", typeof per.gemini === "number" ? `${per.gemini}/100` : "—"],
+      ["Copilot", typeof per.copilot === "number" ? `${per.copilot}/100` : "—"],
+      ["Perplexity", typeof per.perplexity === "number" ? `${per.perplexity}/100` : "—"],
+      ["Claude", typeof per.claude === "number" ? `${per.claude}/100` : "—"],
+    ],
+    styles: { fontSize: 10, cellPadding: 4 },
+    headStyles: { fillColor: [30, 41, 59] },
+    alternateRowStyles: { fillColor: [245, 247, 250] },
+    theme: "striped",
+    margin: { left: margin, right: margin },
+  });
+  y = (doc as any).lastAutoTable.finalY + 12;
+}
 
       // Si hay bloqueos, listarlos
       if (!data.accessibleForOAI && data.blockedReasons?.length) {
@@ -378,6 +414,71 @@ const doc = new JsPDF({ unit: "pt", format: "a4" });
                   </ul>
                 )}
               </motion.div>
+
+              {(data.perModelScores || data.iaReadiness !== undefined) && (
+  <motion.div
+    className="card"
+    initial={{ opacity: 0, y: 8 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ duration: 0.3, delay: 0.07 }}
+    style={{ marginTop: 12 }}
+  >
+    <div className="section-title">
+      <div className="section-eyebrow">Resultados</div>
+      <h2 className="section-heading">Preparación para IA</h2>
+      <div className="section-divider" />
+      <p className="section-kicker">
+        Estimación de qué tan “listo” está tu sitio para cada modelo (0–100). Los modelos usan señales
+        distintas (crawl, contenido, semántica, directivas, etc.), por eso pueden dar puntajes diferentes.
+      </p>
+    </div>
+
+    {/* Barrita global (iaReadiness) */}
+    {typeof data.iaReadiness === "number" && (
+      <div className="score-header" style={{ marginTop: 10 }}>
+        <div className="score-details">
+          <div className="score-value">
+            Preparación global:{" "}
+            <span className={`score-chip chip-${tone(data.iaReadiness)}`}>{data.iaReadiness}</span>/100
+          </div>
+        </div>
+        <div className="score-bar">
+          <div
+            className={`score-progress progress-${tone(data.iaReadiness)}`}
+            style={{ width: `${data.iaReadiness}%` }}
+          />
+        </div>
+      </div>
+    )}
+
+    {/* Tabla por modelo */}
+    <div style={{ marginTop: 12, display: "grid", gap: 10 }}>
+      {(() => {
+        const scores = data.perModelScores || {};
+        const rows: Array<[string, number | undefined]> = [
+          ["ChatGPT", scores.chatgpt],
+          ["Gemini", scores.gemini],
+          ["Copilot", scores.copilot],
+          ["Perplexity", scores.perplexity],
+          ["Claude", scores.claude],
+        ];
+        return (
+          <ul className="category-items" style={{ marginTop: 0 }}>
+            {rows.map(([label, val]) => (
+              <li key={label} className="category-item">
+                <span>{label}</span>
+                <span className={`score-chip chip-${tone(typeof val === "number" ? val : 0)}`}>
+                  {typeof val === "number" ? val : "—"}
+                </span>
+              </li>
+            ))}
+          </ul>
+        );
+      })()}
+    </div>
+  </motion.div>
+)}
+
 
               <div className="grid-container">
                 <motion.section
