@@ -163,25 +163,27 @@ if (typeof data.iaReadiness === "number" || data.perModelScores) {
   doc.text("Preparación para IA", margin, y);
   y += 6;
 
-  const per = data.perModelScores || {};
-  autoTable(doc, {
-    startY: y,
-    head: [["Métrica", "Valor"]],
-    body: [
-      ["Preparación global", typeof data.iaReadiness === "number" ? `${data.iaReadiness}/100` : "—"],
-      ["ChatGPT", typeof per.chatgpt === "number" ? `${per.chatgpt}/100` : "—"],
-      ["Gemini", typeof per.gemini === "number" ? `${per.gemini}/100` : "—"],
-      ["Copilot", typeof per.copilot === "number" ? `${per.copilot}/100` : "—"],
-      ["Perplexity", typeof per.perplexity === "number" ? `${per.perplexity}/100` : "—"],
-      ["Claude", typeof per.claude === "number" ? `${per.claude}/100` : "—"],
-    ],
-    styles: { fontSize: 10, cellPadding: 4 },
-    headStyles: { fillColor: [30, 41, 59] },
-    alternateRowStyles: { fillColor: [245, 247, 250] },
-    theme: "striped",
-    margin: { left: margin, right: margin },
-  });
-  y = (doc as any).lastAutoTable.finalY + 12;
+  // Preparación para IA
+const per = data.perModelScores || {};
+autoTable(doc, {
+  startY: y,
+  head: [["Métrica", "Valor"]],
+  body: [
+    ["Preparación global", typeof data.iaReadiness === "number" ? `${data.iaReadiness}/100` : "—"],
+    ["ChatGPT", typeof per.chatgpt === "number" ? `${per.chatgpt}/100` : "—"],
+    ["Gemini", typeof per.gemini === "number" ? `${per.gemini}/100` : "—"],
+    ["Copilot", typeof per.copilot === "number" ? `${per.copilot}/100` : "—"],
+    ["Perplexity", typeof per.perplexity === "number" ? `${per.perplexity}/100` : "—"],
+    ["Claude", typeof per.claude === "number" ? `${per.claude}/100` : "—"],
+  ],
+  styles: { fontSize: 8, cellPadding: 2 },  // 👈 más compacto
+  headStyles: { fillColor: [30, 41, 59] },
+  alternateRowStyles: { fillColor: [245, 247, 250] },
+  theme: "striped",
+  margin: { left: margin, right: margin },
+  tableWidth: "auto",
+});
+y = (doc as any).lastAutoTable.finalY + 12;
 }
 
       // Si hay bloqueos, listarlos
@@ -463,16 +465,24 @@ if (typeof data.iaReadiness === "number" || data.perModelScores) {
           ["Claude", scores.claude],
         ];
         return (
-          <ul className="category-items" style={{ marginTop: 0 }}>
-            {rows.map(([label, val]) => (
-              <li key={label} className="category-item">
-                <span>{label}</span>
-                <span className={`score-chip chip-${tone(typeof val === "number" ? val : 0)}`}>
-                  {typeof val === "number" ? val : "—"}
-                </span>
-              </li>
-            ))}
-          </ul>
+          <ul
+  className="category-items"
+  style={{ marginTop: 0, fontSize: "0.85rem", gap: 4, padding: "4px 0" }}
+>
+  {rows.map(([label, val]) => (
+    <li
+      key={label}
+      className="category-item"
+      style={{ padding: "2px 4px", display: "flex", justifyContent: "space-between" }}
+    >
+      <span>{label}</span>
+      <span className={`score-chip chip-${tone(typeof val === "number" ? val : 0)}`}>
+        {typeof val === "number" ? val : "—"}
+      </span>
+    </li>
+  ))}
+</ul>
+
         );
       })()}
     </div>
