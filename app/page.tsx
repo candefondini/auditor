@@ -430,8 +430,7 @@ y = (doc as any).lastAutoTable.finalY + 12;
       <h2 className="section-heading">Preparación para IA</h2>
       <div className="section-divider" />
       <p className="section-kicker">
-        Estimación de qué tan “listo” está tu sitio para cada modelo (0–100). Los modelos usan señales
-        distintas (crawl, contenido, semántica, directivas, etc.), por eso pueden dar puntajes diferentes.
+        Estimación de qué tan “listo” está tu sitio para cada modelo (0–100).
       </p>
     </div>
 
