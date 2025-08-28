@@ -97,11 +97,16 @@ export async function POST(req: Request) {
     }
 
     // Enviar a n8n
-    const url = process.env.N8N_WEBHOOK_URL;
-    if (!url) {
-      console.error("[LEAD] Falta N8N_WEBHOOK_URL en variables de entorno");
-      return new NextResponse("Configuración del servidor incompleta", { status: 500 });
-    }
+const url = process.env.N8N_WEBHOOK_URL;
+
+// ⬇️ Esta línea nueva imprime la URL en los logs de Vercel
+console.log("DEBUG: N8N_WEBHOOK_URL =", url);
+
+if (!url) {
+  console.error("[LEAD] Falta N8N_WEBHOOK_URL en variables de entorno");
+  return new NextResponse("Configuración del servidor incompleta", { status: 500 });
+}
+
 
     const payload = {
       nombre,
@@ -138,4 +143,5 @@ export async function POST(req: Request) {
     const msg = typeof e?.message === "string" ? e.message : "Error";
     return new NextResponse(msg, { status: 500 });
   }
+  
 }
