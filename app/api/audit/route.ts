@@ -1,4 +1,3 @@
-//app//api//audit//route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { getPerModelScores } from "./ia";
 
@@ -11,9 +10,10 @@ type Suggestion = {
   effort: "low" | "med" | "high";
   detail?: string;
 };
+
 type Breakdown = { category: string; score: number; items: Record<string, any> };
 
-const WEIGHTS = { crawl: 0.35, disc: 0.25, content: 0.20, render: 0.15, i18n: 0.05 } as const;
+const WEIGHTS = { crawl: 0.35, disc: 0.25, content: 0.2, render: 0.15, i18n: 0.05 } as const;
 
 function normalizeUrl(q: string) {
   const raw = q.trim();
@@ -37,7 +37,7 @@ async function fetchSafe(u: string, ua: string) {
       headers: {
         "User-Agent":
           ua ||
-          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome Safari",
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, como Gecko) Chrome Safari",
         Accept: "text/html,application/xhtml+xml;q=0.9,*/*;q=0.8",
       },
       redirect: "follow",
@@ -56,9 +56,7 @@ export async function GET(req: NextRequest) {
   const q = req.nextUrl.searchParams.get("url");
   if (!q) return NextResponse.json({ error: "Falta ?url=" }, { status: 400 });
 
-  const strict = ["1", "true", "yes"].includes(
-    (req.nextUrl.searchParams.get("strict") || "").toLowerCase()
-  );
+  const strict = ["1", "true", "yes"].includes((req.nextUrl.searchParams.get("strict") || "").toLowerCase());
 
   const url = normalizeUrl(q);
   const ua = "oai-searchbot";
@@ -110,7 +108,7 @@ export async function GET(req: NextRequest) {
   // soft 404
   const lower = html.toLowerCase();
   const looks404 =
-    /(^|\b)(404|not found|p[aá]gina no encontrada|pagina no encontrada|no se encontr[oó]|page not found)(\b|$)/i.test(
+    /(\b)(404|not found|p[aá]gina no encontrada|pagina no encontrada|no se encontr[oó]|page not found)(\b)/i.test(
       lower
     ) || /<title[^>]*>[^<]*(404|not found)/i.test(html);
 
@@ -131,7 +129,8 @@ export async function GET(req: NextRequest) {
   for (const l of lines) {
     const m = l.match(/^(user-agent|disallow)\s*:\s*(.+)$/i);
     if (!m) continue;
-    const k = m[1].toLowerCase(), v = m[2].trim().toLowerCase();
+    const k = m[1].toLowerCase(),
+      v = m[2].trim().toLowerCase();
     if (k === "user-agent") {
       currentUA = v;
       groups[currentUA] = groups[currentUA] || [];
@@ -163,7 +162,8 @@ export async function GET(req: NextRequest) {
     const rules = uaGroup.length ? uaGroup.join(", ") : "(Disallow: /)";
     blockedReasons.push(`robots.txt bloquea a "oai-searchbot" → ${rules}`);
   }
-  if (!/text\/html/.test(contentType)) blockedReasons.push(`Content-Type no HTML (${contentType || "desconocido"})`);
+  if (!/text\/html/.test(contentType))
+    blockedReasons.push(`Content-Type no HTML (${contentType || "desconocido"})`);
 
   const accessibleForOAI = blockedReasons.length === 0;
 
@@ -274,13 +274,13 @@ export async function GET(req: NextRequest) {
 
   // Contenido & Semántica
   let cont = 100;
-  const contItems = {
+  const contentItems = {
     h1Ok: !!h1,
     textRatioOk: textRatio >= TRATIO_MIN,
     schemaOk: hasSchema,
     faqOk: hasFAQ,
   };
-  if (!contItems.h1Ok) {
+  if (!contentItems.h1Ok) {
     cont -= 10;
     suggestions.push({
       id: "h1",
@@ -290,7 +290,7 @@ export async function GET(req: NextRequest) {
       detail: "1 solo H1 por página, claro y con keyword principal.",
     });
   }
-  if (!contItems.textRatioOk) {
+  if (!contentItems.textRatioOk) {
     cont -= 22;
     suggestions.push({
       id: "ssr",
@@ -300,7 +300,7 @@ export async function GET(req: NextRequest) {
       detail: "Evitá páginas vacías que dependen 100% de JS para el contenido crítico.",
     });
   }
-  if (!contItems.schemaOk) {
+  if (!contentItems.schemaOk) {
     cont -= 10;
     suggestions.push({
       id: "schema",
@@ -310,7 +310,7 @@ export async function GET(req: NextRequest) {
       detail: "Usá tipos Article/Product/Organization, etc. según el caso.",
     });
   }
-  if (!contItems.faqOk) {
+  if (!contentItems.faqOk) {
     cont -= 4;
     suggestions.push({
       id: "faq",
@@ -320,11 +320,7 @@ export async function GET(req: NextRequest) {
       detail: "Estructurá preguntas comunes en JSON-LD (si aplica).",
     });
   }
-  breakdown.push({
-    category: "Contenido & Semántica",
-    score: Math.max(0, cont),
-    items: contItems,
-  });
+  breakdown.push({ category: "Contenido & Semántica", score: Math.max(0, cont), items: contentItems });
 
   // Render / Robustez
   let rend = 100;
@@ -424,42 +420,81 @@ export async function GET(req: NextRequest) {
     extrasSuggestions.push({ title: "Proteger contra clickjacking (X-Frame-Options o frame-ancestors en CSP)" });
   if (!robotsAllowedGPT) extrasSuggestions.push({ title: "robots.txt bloquea a gptbot (revisar reglas)" });
 
-  // ====== IA Readiness / Per-model scores (usando TUS nombres) ======
+  // ====== IA Readiness / Per-model scores ======
   const auditedUrl = page.url || url;
 
   // Flatten de items
   const flatItems: Record<string, any> = {};
   for (const b of breakdown) Object.assign(flatItems, b.items || {});
 
-  const httpsFlag     = /^https:\/\//i.test(auditedUrl);
-  const status2xx     = !!flatItems["http2xx"];
-  const textRatioOk   = !!flatItems["textRatioOk"];
-  const hasCanonical  = !!flatItems["canonicalOk"];
-  const schemaOk      = !!flatItems["schemaOk"];
-  const h1Ok          = !!flatItems["h1Ok"];
+  const httpsFlag = /^https:\/\//i.test(auditedUrl);
+  const status2xx = !!flatItems["http2xx"];
+  const textRatioOK = !!flatItems["textRatioOk"];
+  const hasCanonical = !!flatItems["canonicalOk"];
+  const schemaOK = !!flatItems["schemaOk"];
+  const h1OK = !!flatItems["h1Ok"];
 
   let perModelScores: Record<string, number> | undefined;
   let iaReadiness: number | undefined;
+  const iaHintsList: string[] = [];
 
   try {
     const scored = await getPerModelScores({
       url: auditedUrl,
       https: httpsFlag,
       status2xx,
-      textRatioOk,
+      textRatioOk: textRatioOK,
       hasCanonical,
-      schema: schemaOk,
-      h1: h1Ok,
+      schema: schemaOK,
+      h1: h1OK,
     });
 
     perModelScores = scored.perModelScores;
     iaReadiness = scored.iaReadiness;
 
-    // anexamos hints del scorer a extrasSuggestions
-    for (const h of scored.hints) extrasSuggestions.push({ title: h });
+    // Bloqueos/robots
+    if (blockedReasons.length > 0) {
+      iaHintsList.push("Quitar noindex/none/X-Robots/Disallow que bloquean a crawlers de IA (+25).");
+    }
+    if (!extras.robotsPerBot.gpt) {
+      iaHintsList.push("Revisar robots.txt: gptbot está bloqueado (+25).");
+    }
+    if (!robotsAllowed) {
+      iaHintsList.push("Habilitar acceso en robots.txt para 'oai-searchbot' y '*' (+25).");
+    }
+
+    // Contenido/semántica/render
+    if (!h1) iaHintsList.push("Añadir un H1 descriptivo (+10).");
+    if (jsonLd.length === 0) iaHintsList.push("Agregar datos estructurados schema.org en JSON-LD (+10).");
+
+    const contFromBreakdown = (breakdown.find((b) => b.category === "Contenido & Semántica")?.items ?? {}) as any;
+    const discFromBreakdown = (breakdown.find((b) => b.category === "Descubribilidad")?.items ?? {}) as any;
+
+    if (!contFromBreakdown.textRatioOk) {
+      iaHintsList.push("Servir contenido crítico en el HTML inicial (SSR/prerender) (+22).");
+    }
+    if (!discFromBreakdown.canonicalOk) {
+      iaHintsList.push('Agregar <link rel="canonical"> (+8).');
+    }
+
+    if (!extras.metaDescription.present || !extras.metaDescription.ok) {
+      iaHintsList.push("Mejorar meta description a 50–160 caracteres (+5).");
+    }
+
+    for (const h of scored?.hints || []) iaHintsList.push(h);
+
+    // También anexamos los hints del scorer a extrasSuggestions
+    for (const h of scored?.hints || []) extrasSuggestions.push({ title: h });
   } catch (e) {
     console.error("[IA readiness] error:", e);
   }
+
+  const raw = {
+    status: page.status,
+    contentType,
+    robotsAllowed,
+    sitemaps: lines.filter((l) => l.startsWith("sitemap:")),
+  };
 
   return NextResponse.json({
     url,
@@ -473,13 +508,9 @@ export async function GET(req: NextRequest) {
     suggestions,
     extras,
     extrasSuggestions,
-    perModelScores,   // 👈 nuevo
-    iaReadiness,      // 👈 nuevo
-    raw: {
-      status: page.status,
-      contentType,
-      robotsAllowed,
-      sitemaps: lines.filter((l) => l.startsWith("sitemap:")),
-    },
+    perModelScores,
+    iaReadiness,
+    iaHints: iaHintsList, // múltiples sugerencias lógicas
+    raw,
   });
 }
