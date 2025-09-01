@@ -12,6 +12,16 @@ type Suggestion = {
   detail?: string;
 };
 
+function swapWwwVariant(u: string) {
+  try {
+    const x = new URL(u);
+    if (x.hostname.startsWith("www.")) x.hostname = x.hostname.slice(4);
+    else x.hostname = "www." + x.hostname;
+    return x.toString();
+  } catch { return u; }
+}
+
+
 type Breakdown = { category: string; score: number; items: Record<string, any> };
 
 const WEIGHTS = { crawl: 0.35, disc: 0.25, content: 0.2, render: 0.15, i18n: 0.05 } as const;
@@ -33,8 +43,8 @@ async function fetchWithTimeout(resource: string, options: RequestInit = {}, ms 
 }
 
 async function fetchSafe(u: string, ua: string) {
+  // 1) intento con UA “bot”
   try {
-    // primer intento con el UA que ya usamos
     let r = await fetchWithTimeout(u, {
       headers: {
         "User-Agent": ua,
@@ -43,16 +53,61 @@ async function fetchSafe(u: string, ua: string) {
       redirect: "follow",
     });
 
-    // si responde 403 o 406 → reintento con un UA de Chrome real
+    // 2) si 403/406 → UA Chrome + headers reales
     if (r.status === 403 || r.status === 406) {
       r = await fetchWithTimeout(u, {
         headers: {
           "User-Agent":
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome Safari",
           Accept: "text/html,application/xhtml+xml;q=0.9,*/*;q=0.8",
+          "Accept-Language": "es-AR,es;q=0.9,en;q=0.8",
+          "Upgrade-Insecure-Requests": "1",
+          "Sec-Fetch-Site": "none",
+          "Sec-Fetch-Mode": "navigate",
+          "Sec-Fetch-Dest": "document",
+          Referer: "https://www.google.com/",
         },
         redirect: "follow",
       });
+    }
+
+    // 3) si sigue bloqueando → probar variante www./sin www.
+    if (r.status === 403 || r.status === 406) {
+      const swapped = swapWwwVariant(u);
+      if (swapped !== u) {
+        r = await fetchWithTimeout(swapped, {
+          headers: {
+            "User-Agent":
+              "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome Safari",
+            Accept: "text/html,application/xhtml+xml;q=0.9,*/*;q=0.8",
+            "Accept-Language": "es-AR,es;q=0.9,en;q=0.8",
+            Referer: "https://www.google.com/",
+          },
+          redirect: "follow",
+        });
+      }
+    }
+
+    // 4) último recurso: proxy lectura (r.jina.ai)
+    if ((r.status === 403 || r.status === 406 || r.status === 451) && !r.ok) {
+      // r.jina.ai requiere http en la URL embebida, pero maneja https igual.
+      const prox = "https://r.jina.ai/http://" + u.replace(/^https?:\/\//i, "");
+      const pr = await fetchWithTimeout(prox, {
+        headers: {
+          "User-Agent":
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome Safari",
+          Accept: "text/html,*/*;q=0.8",
+        },
+        redirect: "follow",
+      });
+
+      if (pr.ok) {
+        const text = await pr.text();
+        // El proxy manda text/plain; forzamos content-type a html para no penalizar
+        const h = new Headers();
+        h.set("content-type", "text/html; charset=utf-8");
+        return { ok: true, status: 200, headers: h, text, url: u + "#via-proxy" };
+      }
     }
 
     const text = r.ok ? await r.text() : "";
