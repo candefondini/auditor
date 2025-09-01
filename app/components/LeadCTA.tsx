@@ -15,30 +15,37 @@ export default function LeadCTA({ score, url }: { score: number; url: string }) 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
     setForm({ ...form, [e.target.name]: e.target.value });
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setStatus("loading");
-    setErrorMsg(null);
-    try {
-      const payload = {
-        name: form.nombre,
-        email: form.email,
-        message: form.comentario,
-        url: form.sitio,
-      };
-      const res = await fetch("/api/send", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      if (!res.ok) throw new Error("Error enviando");
-      setStatus("ok");
-      setForm({ nombre: "", email: "", sitio: "", comentario: "" });
-    } catch (err: any) {
-      setStatus("error");
-      setErrorMsg(err?.message || "Error desconocido");
+ const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setStatus("loading");
+  setErrorMsg(null);
+  try {
+    const payload = {
+      nombre: form.nombre,
+      email: form.email,
+      site: form.sitio,        // <-- el route /api/lead espera "site"
+      comentario: form.comentario,
+    };
+
+    const res = await fetch("/api/lead", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    if (!res.ok) {
+      // el route devuelve un texto útil (p.ej. sugerencia de dominio)
+      const msg = await res.text().catch(() => "");
+      throw new Error(msg || "Error enviando");
     }
-  };
+
+    setStatus("ok");
+    setForm({ nombre: "", email: "", sitio: "", comentario: "" });
+  } catch (err: any) {
+    setStatus("error");
+    setErrorMsg(err?.message || "Error desconocido");
+  }
+};
 
   const tone = (n: number) => (n <= 70 ? "red" : n <= 80 ? "amber" : "green");
 

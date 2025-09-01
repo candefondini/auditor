@@ -95,7 +95,6 @@ body{
 /* ===== SectionTitle ===== */
 .section-title{ display:flex; flex-direction:column; gap:6px; align-items:flex-start; }
 .section-eyebrow{ color: color-mix(in srgb, var(--muted) 90%, #fff 10%); font-size:12px; font-weight:700; letter-spacing:.6px; text-transform:uppercase; }
-/* 👉 Título de sección con tamaño único en toda la app */
 .section-heading{ margin:0; font-weight:800; letter-spacing:-0.01em; font-size: clamp(18px, 2.2vw, 28px); }
 .section-divider{ width:72px; height:3px; border-radius:3px; background: linear-gradient(90deg, var(--accent), var(--accent2)); box-shadow: 0 4px 14px rgba(129,140,248,.25); margin: 4px 0 2px; }
 .section-kicker{ color: var(--muted); font-size: 13px; line-height:1.55; max-width: 65ch; }
@@ -110,7 +109,7 @@ body{
   border-radius:14px;
   padding: 10px 12px;
   font-size:13px; outline:none;
-  flex: 1 1 auto; min-width: 0;
+  flex: 1 1 auto; min-width: 0; /* <- permite encogerse en fila */
   word-break: break-word;
   transition: border-color .15s ease, box-shadow .2s ease;
 }
@@ -131,6 +130,7 @@ body{
   font-size:14px; font-weight:700; cursor:pointer;
   box-shadow: 0 6px 14px rgba(0,0,0,.08);
   transition: transform .04s ease, box-shadow .2s ease, filter .15s ease;
+  flex-shrink: 0; /* <- no se achica en fila */
 }
 .btn-audit:hover{ transform: translateY(-1px); box-shadow: 0 8px 18px rgba(0,0,0,.12); }
 .btn-audit:active{ transform: translateY(0); box-shadow: 0 4px 12px rgba(0,0,0,.08); }
@@ -148,27 +148,18 @@ body{
 .btn-secondary:hover{ filter: brightness(1.06); transform: translateY(-1px); }
 .btn-secondary:active{ transform: translateY(0); }
 
-.btn-download{
-  background:#192746;
-  color: var(--text);
-  border:1px solid var(--ring);
-  border-radius:12px;
-  padding:10px 14px;
-  font-size:14px; font-weight:700; cursor:pointer;
-  box-shadow: 0 2px 8px rgba(0,0,0,.05);
-  transition: transform .04s ease, filter .2s ease, box-shadow .2s ease;
+/* ===== Mensajes ===== */
+.error-message{
+  margin-top:8px; padding:10px 12px; border-radius:12px;
+  background:#3f1a1a; color:#ffdada; border:1px solid #5b2323;
 }
-.btn-download:hover{ filter: brightness(1.06); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,.12); }
-.btn-audit:disabled,
-.btn-download:disabled{ opacity:.65; cursor:not-allowed; }
 
 /* ===== Tarjetas / chips ===== */
-/* 🔧 Unificamos padding y bordes: TODAS las tarjetas usan solo .card */
 .card{
   background: color-mix(in srgb, #ffffff 9%, transparent);
   border:1px solid color-mix(in srgb, #ffffff 16%, transparent);
   border-radius: 18px;
-  padding: 14px; /* único punto de verdad */
+  padding: 14px;
   box-shadow: var(--shadow-1), inset 0 1px 0 rgba(255,255,255,.05);
 }
 .card-subtle{
@@ -207,15 +198,13 @@ body{
 .pill-ok{ background:#064e3b; color:#d1fae5; }
 .pill-bad{ background:#4c1d1d; color:#fecaca; }
 
-/* ===== GRID PRINCIPAL (solo 1 col por defecto) ===== */
+/* ===== GRID PRINCIPAL ===== */
 .grid-container{
   margin-top:12px;
   display:grid; grid-template-columns: 1fr;
   gap: 16px;
 }
 
-/* ==== Izquierda: Score + Breakdown ==== */
-/* (sin padding extra aquí; lo pone .card para todos) */
 .score-header{ display:flex; flex-direction:column; gap:10px; }
 .score-details .score-value{ font-size:16px; font-weight:800; letter-spacing:-0.01em; }
 .score-bar{ margin-top:6px; height:6px; width:100%; background:rgba(148,163,184,.22); border-radius:999px; overflow:hidden; }
@@ -245,7 +234,7 @@ body{
 .category-header{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
 .category-header h3{ margin:0; font-size:14.5px; font-weight:800; letter-spacing:.1px; }
 
-/* Chip de score más grande (para que no se salga el número) */
+/* Chip de score más grande */
 .category-score{
   display:inline-flex; align-items:center; justify-content:center;
   min-width:32px; height:22px; padding:0 8px;
@@ -313,6 +302,7 @@ body{
   .header .header-content{ padding:12px 16px; }
   .title-glitch{ font-size:20px; }
 
+  /* buscador en fila en tablet+ */
   .input-container{ flex-direction:row; align-items:center; }
   .btn-audit{ width:auto; }
   .input-url, .btn-audit{ font-size:14px; padding:10px 12px; }
@@ -321,50 +311,32 @@ body{
   .category-header h3{ font-size:14px; }
 }
 
-@media (min-width:1024px){
-  .input-url{ min-width: 880px; }
-  .categories{ grid-template-columns: repeat(3, minmax(0,1fr)); gap:12px; }
-  .header .header-content{ padding:14px 18px; }
-  .title-glitch{ font-size:22px; }
-}
-
-/* ====== Modo PDF ====== */
-.pdf-mode body{ background: #ffffff !important; font-size: 12.75px !important; }
-.pdf-mode .header{ background: #0b1220 !important; border-bottom: 1px solid rgba(255,255,255,.06) !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
-.pdf-mode .card{ background: #111827 !important; border: 1px solid rgba(255,255,255,.10) !important; box-shadow: none !important; border-radius: 14px !important; }
-.pdf-mode .score-chip,
-.pdf-mode .category-score,
-.pdf-mode .pill{ background: #1f2937 !important; border: 1px solid rgba(255,255,255,.12) !important; box-shadow: none !important; color: #e5e7eb !important; }
-.pdf-mode .score-bar{ background: #1f2937 !important; }
-.pdf-mode .score-progress{ background: #10b981 !important; box-shadow: none !important; }
-.pdf-mode .progress-amber{ background: #f59e0b !important; }
-.pdf-mode .progress-red{ background: #ef4444 !important; }
-.pdf-mode .category-items{ gap: 6px !important; }
-.pdf-mode .category-item{ border-bottom: 1px dashed rgba(255,255,255,.12) !important; padding: 6px 0 !important; }
-.pdf-mode .category-item:last-child{ border-bottom: 0 !important; }
-.pdf-mode .btn-audit,
-.pdf-mode .btn-download{ background: #10b981 !important; color: #062e22 !important; box-shadow: none !important; border-radius: 12px !important; }
-.pdf-mode *{ animation: none !important; transition: none !important; filter: none !important; }
-
-/* ===== Utilidades responsive mínimas ===== */
+/* Utilidades responsive mínimas */
 @media (min-width: 768px){
   .md\:grid{ display:grid; }
   .md\:grid-cols-2{ grid-template-columns: repeat(2,minmax(0,1fr)); }
   .md\:gap-4{ gap: 16px; }
 }
 
-/* ===== Fila reutilizable de 2 columnas (igual ancho en mobile) ===== */
+/* Fila reutilizable de 2 columnas (igual ancho en mobile) */
 .two-col-md{
   display:grid;
   grid-template-columns: 1fr;
   gap: 16px;
 }
 
-/* Desktop: izquierda (Score OAI) más ancha que la derecha (Sugerencias) */
+/* Desktop: izquierda más ancha que derecha */
 @media (min-width:1024px){
   .two-col-md{
-    grid-template-columns: 1.5fr 1fr;  /* 👈 izquierda un poco más angosta */
+    grid-template-columns: 1.5fr 1fr;
     gap: 20px;
   }
 }
 
+/* Mobile: que el input nunca se pase del card */
+@media (max-width: 480px){
+  .input-url{
+    width: 100% !important;
+    max-width: none !important;
+  }
+}
