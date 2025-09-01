@@ -34,21 +34,34 @@ async function fetchWithTimeout(resource: string, options: RequestInit = {}, ms 
 
 async function fetchSafe(u: string, ua: string) {
   try {
-    const r = await fetchWithTimeout(u, {
+    // primer intento con el UA que ya usamos
+    let r = await fetchWithTimeout(u, {
       headers: {
-        "User-Agent":
-          ua ||
-          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, como Gecko) Chrome Safari",
+        "User-Agent": ua,
         Accept: "text/html,application/xhtml+xml;q=0.9,*/*;q=0.8",
       },
       redirect: "follow",
     });
+
+    // si responde 403 o 406 → reintento con un UA de Chrome real
+    if (r.status === 403 || r.status === 406) {
+      r = await fetchWithTimeout(u, {
+        headers: {
+          "User-Agent":
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome Safari",
+          Accept: "text/html,application/xhtml+xml;q=0.9,*/*;q=0.8",
+        },
+        redirect: "follow",
+      });
+    }
+
     const text = r.ok ? await r.text() : "";
     return { ok: r.ok, status: r.status, headers: r.headers, text, url: r.url || u };
   } catch (e: any) {
     return { ok: false, status: 0, headers: new Headers(), text: "", url: u, error: String(e) };
   }
 }
+
 
 const getHeader = (h: Headers, k: string) =>
   h.get(k) || Array.from(h.entries()).find(([kk]) => kk.toLowerCase() === k.toLowerCase())?.[1] || "";
