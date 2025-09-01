@@ -1,6 +1,7 @@
 // app/layout.tsx
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
@@ -13,7 +14,7 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://promte.ar"),
+  metadataBase: new URL("https://prompte.ar"),
   title: { default: "IA Friendly", template: "%s | promte.ar" },
   description: "Auditoría de accesibilidad para OAI-SearchBot.",
   applicationName: "promte.ar",
@@ -24,7 +25,7 @@ export const metadata: Metadata = {
   alternates: { canonical: "/", languages: { "es-AR": "/" } },
   openGraph: {
     type: "website",
-    url: "https://promte.ar",
+    url: "https://prompte.ar",
     siteName: "promte.ar",
     title: "IA Friendly",
     description: "Auditoría de accesibilidad para OAI-SearchBot.",
@@ -38,7 +39,8 @@ export const metadata: Metadata = {
     images: ["/og.png"],
   },
   robots: {
-    index: true, follow: true,
+    index: true,
+    follow: true,
     googleBot: { index: true, follow: true, "max-snippet": -1, "max-image-preview": "large", "max-video-preview": -1 },
   },
   icons: {
@@ -56,36 +58,36 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+  const GTM_ID = "GTM-K5X5H8QK"; // si querés, pasalo a NEXT_PUBLIC_GTM_ID
+
   return (
     <html lang="es">
-      {/* ===== GTM: script en <head> ===== */}
-      <head>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start': new Date().getTime(),event:'gtm.js'});
-var f=d.getElementsByTagName(s)[0], j=d.createElement(s), dl=l!='dataLayer'?'&l='+l:'';
-j.async=true; j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl; f.parentNode.insertBefore(j,f);
-})(window,document,'script','dataLayer','GTM-K5X5H8QK');
-            `.trim(),
-          }}
-        />
-      </head>
+      {/* GTM script (in head) */}
+      <Script id="gtm-base" strategy="afterInteractive">
+        {`
+          (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+          new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+          j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+          'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+          })(window,document,'script','dataLayer','${GTM_ID}');
+        `}
+      </Script>
 
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        {/* ===== GTM: noscript iframe apenas abre <body> ===== */}
-        <noscript>
-          <iframe
-            src="https://www.googletagmanager.com/ns.html?id=GTM-K5X5H8QK"
-            height="0"
-            width="0"
-            style={{ display: "none", visibility: "hidden" }}
-          />
-        </noscript>
+        {/* GTM noscript (justo al abrir body) */}
+        <noscript
+          dangerouslySetInnerHTML={{
+            __html: `
+              <iframe src="https://www.googletagmanager.com/ns.html?id=${GTM_ID}"
+                      height="0" width="0"
+                      style="display:none;visibility:hidden"></iframe>
+            `,
+          }}
+        />
 
         {children}
 
-        {/* Datos estructurados Organization */}
+        {/* Organization */}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
@@ -94,13 +96,12 @@ j.async=true; j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl; f.parent
               "@type": "Organization",
               name: "Coso",
               url: "https://coso.ar",
-              logo: "https://promte.ar/og.png",
+              logo: "https://prompte.ar/og.png",
               sameAs: [],
             }),
           }}
         />
-
-        {/* Datos estructurados WebApplication */}
+        {/* WebApplication */}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
