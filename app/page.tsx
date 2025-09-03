@@ -50,8 +50,8 @@ function isValidAuditableUrl(raw: string): boolean {
     const u = new URL(withProto);
     if (!/^https?:$/.test(u.protocol)) return false;
     const host = u.hostname;
-    if (!/^[a-z0-9.-]+$/i.test(host)) return false; // letras/números/guiones/puntos
-    if (!/\.[a-z]{2,}$/i.test(host)) return false; // TLD de 2+ letras (.ar ok), multinivel ok
+    if (!/^[a-z0-9.-]+$/i.test(host)) return false;
+    if (!/\.[a-z]{2,}$/i.test(host)) return false;
     return true;
   } catch {
     return false;
@@ -197,7 +197,7 @@ const Card: React.FC<CardProps> = ({ children, style, as: Comp = "div", ...rest 
 
 /* --------- SearchBar (memo) - estable, no pierde foco --------- */
 const SEARCH_CARD_STYLE: React.CSSProperties = {
-  width: "min(1128px, calc(100vw - 32px))", // mismo tope que .content-container
+  width: "min(1128px, calc(100vw - 32px))",
   padding: 16,
   marginInline: "auto",
 };
@@ -280,9 +280,7 @@ export default function Home() {
     e.preventDefault();
     if (loading) return;
     if (!isValidAuditableUrl(url)) {
-      setErr(
-        "Ingresá una URL válida (https/http). Aceptamos dominios .ar y multinivel como .com.ar"
-      );
+      setErr("Ingresá una URL válida (https/http). Aceptamos dominios .ar y multinivel como .com.ar");
       return;
     }
     audit();
@@ -304,92 +302,45 @@ export default function Home() {
       </motion.header>
 
       <div className="content-container">
-        {/* ======= ESTADO: SIN RESULTADOS ======= */}
+        {/* 🔧 Intro SSR visible para mejorar text-ratio y anti soft-404 */}
+        <section
+          aria-label="Descripción del servicio"
+          style={{
+            maxWidth: 960,
+            margin: "12px auto 8px",
+            lineHeight: 1.6,
+            fontSize: 15,
+            opacity: 0.95,
+          }}
+        >
+          <p>
+            IA Friendly es un auditor ligero que verifica si tu página está lista para los
+            crawlers de IA (como OAI-SearchBot). Analiza señales técnicas (robots, sitemap,
+            headers), contenido visible en el HTML inicial, datos estructurados y posibles
+            bloqueos contra bots. Ingresá una URL pública y obtené un reporte con un score
+            OAI y recomendaciones priorizadas por impacto. El objetivo es que los modelos de
+            IA puedan descubrir y entender mejor tu sitio.
+          </p>
+          <p className="muted" style={{ marginTop: 6 }}>
+            Sugerimos implementar mejoras como meta-descriptions informativas, marcado
+            schema.org (FAQ/HowTo cuando corresponda) y contenido crítico renderizado en el
+            HTML inicial, para evitar páginas “blancas” que dependan 100% de JavaScript.
+          </p>
+        </section>
+
+        {/* ======= BUSCADOR ======= */}
         {!hasResult ? (
-          <div style={{ display: "grid", gap: 12 }}>
-            {/* Intro rica en texto para subir textRatio y evitar soft 404 */}
-            <Card style={{ ...SEARCH_CARD_STYLE }}>
-              <div className="section-title">
-                <div className="section-eyebrow">Qué es</div>
-                <h2 className="section-heading">Auditá tu sitio para crawlers de IA</h2>
-                <div className="section-divider" />
-                <p className="section-kicker">
-                  IA Friendly analiza señales técnicas que usan OAI-SearchBot, gptbot y otros
-                  crawlers. Te da un <strong>score de 0 a 100</strong> y un plan claro para mejorar.
-                </p>
-              </div>
-
-              <div style={{ marginTop: 10, display: "grid", gap: 8 }}>
-                <ul
-                  style={{
-                    listStyle: "disc",
-                    paddingLeft: 18,
-                    display: "grid",
-                    gap: 6,
-                  }}
-                >
-                  <li>
-                    <strong>Crawlabilidad:</strong> HTTPS, <code>robots.txt</code>, cabeceras.
-                  </li>
-                  <li>
-                    <strong>Descubribilidad:</strong> <code>&lt;title&gt;</code>, canonical, sitemap.
-                  </li>
-                  <li>
-                    <strong>Contenido & semántica:</strong> H1, JSON-LD, contenido en HTML inicial.
-                  </li>
-                  <li>
-                    <strong>Render/robustez:</strong> bloqueos anti-bot, paywalls y soft 404.
-                  </li>
-                  <li>
-                    <strong>Internacionalización:</strong> atributo <code>lang</code>.
-                  </li>
-                </ul>
-                <p className="muted small">
-                  Tip: cuanto más contenido útil sirvas en el HTML inicial (SSR/prerender), mejor
-                  te interpretan los crawlers y sube tu score.
-                </p>
-              </div>
-            </Card>
-
-            {/* Buscador */}
-            <SearchBar
-              url={url}
-              setUrl={setUrl}
-              loading={loading}
-              onSubmit={handleSubmit}
-              error={err}
-            />
-
-            {/* Mini-FAQ visible para sumar semántica */}
-            <Card style={{ ...SEARCH_CARD_STYLE }}>
-              <h2 className="section-heading" style={{ marginTop: 0 }}>Preguntas frecuentes</h2>
-              <div className="section-divider" />
-              <details style={{ marginTop: 8 }}>
-                <summary><strong>¿Qué mide el score OAI?</strong></summary>
-                <p style={{ marginTop: 6 }}>
-                  Combina señales de crawlabilidad, descubribilidad, contenido semántico,
-                  robustez de render e i18n. Es un indicador práctico de preparación para IA.
-                </p>
-              </details>
-              <details style={{ marginTop: 8 }}>
-                <summary><strong>¿Cómo mejoro rápido?</strong></summary>
-                <p style={{ marginTop: 6 }}>
-                  Agregá contenido clave en el HTML inicial, sumá JSON-LD (schema.org) y revisá
-                  <code> robots.txt</code> y cabeceras para no bloquear bots legítimos.
-                </p>
-              </details>
-              <details style={{ marginTop: 8 }}>
-                <summary><strong>¿Necesito cambios de servidor?</strong></summary>
-                <p style={{ marginTop: 6 }}>
-                  Ayuda habilitar HSTS, una CSP compatible y proteger contra clickjacking. Declarar
-                  sitemap y canonical también suma.
-                </p>
-              </details>
-            </Card>
+          <div
+            style={{
+              minHeight: "calc(100dvh - 140px)",
+              display: "grid",
+              placeItems: "center",
+            }}
+          >
+            <SearchBar url={url} setUrl={setUrl} loading={loading} onSubmit={handleSubmit} error={err} />
           </div>
         ) : (
           <>
-            {/* ======= BUSCADOR (estado con resultados) ======= */}
             <SearchBar url={url} setUrl={setUrl} loading={loading} onSubmit={handleSubmit} top />
             {err && <div className="error-message">Error: {err}</div>}
           </>
@@ -440,7 +391,6 @@ export default function Home() {
               )}
             </Card>
 
-            {/* ========== Fila: Preparación IA + Sugerencias IA ========== */}
             {(data.perModelScores ||
               typeof data.iaReadiness === "number" ||
               (Array.isArray(data.iaHints) && data.iaHints.length > 0)) && (
@@ -487,16 +437,7 @@ export default function Home() {
                         ["Claude", scores.claude],
                       ];
                       return (
-                        <ul
-                          style={{
-                            listStyle: "none",
-                            padding: 0,
-                            margin: 0,
-                            display: "grid",
-                            gap: 6,
-                            fontSize: 14,
-                          }}
-                        >
+                        <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "grid", gap: 6, fontSize: 14 }}>
                           {rows.map(([label, val]) => (
                             <li
                               key={label}
@@ -590,8 +531,7 @@ export default function Home() {
                         <ul className="category-items">
                           {Object.entries(b.items || {}).map(([k, v]) => {
                             const label = LABELS[k] || k;
-                            const normalized =
-                              typeof v === "boolean" ? (NEGATIVE_TRUE.has(k) ? !v : v) : v;
+                            const normalized = typeof v === "boolean" ? (NEGATIVE_TRUE.has(k) ? !v : v) : v;
                             return (
                               <li key={k} className="category-item">
                                 <span>{label}</span>

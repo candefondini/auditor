@@ -16,7 +16,7 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   metadataBase: new URL("https://prompte.ar"),
   title: { default: "IA Friendly", template: "%s | prompte.ar" },
-  // ⬇️ description 50–160 chars para cerrar el warning del auditor
+  // description 50–160 chars (auditor feliz)
   description:
     "Auditá si tu sitio es accesible para crawlers de IA (OAI-SearchBot, gptbot). Obtené score, sugerencias técnicas, schema y mejoras SEO.",
   applicationName: "prompte.ar",
@@ -30,7 +30,6 @@ export const metadata: Metadata = {
     url: "https://prompte.ar",
     siteName: "prompte.ar",
     title: "IA Friendly",
-    // ⬇️ misma descripción que la principal
     description:
       "Auditá si tu sitio es accesible para crawlers de IA (OAI-SearchBot, gptbot). Obtené score, sugerencias técnicas, schema y mejoras SEO.",
     images: [{ url: "/og.png", width: 1200, height: 630, alt: "IA Friendly" }],
@@ -39,7 +38,6 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "IA Friendly",
-    // ⬇️ misma descripción que la principal
     description:
       "Auditá si tu sitio es accesible para crawlers de IA (OAI-SearchBot, gptbot). Obtené score, sugerencias técnicas, schema y mejoras SEO.",
     images: ["/og.png"],
@@ -68,7 +66,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
   return (
     <html lang="es">
-      {/* GTM script (in head) */}
+      {/* GTM script */}
       <Script id="gtm-base" strategy="afterInteractive">
         {`
           (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
@@ -80,7 +78,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </Script>
 
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        {/* GTM noscript (justo al abrir body) */}
+        {/* GTM noscript */}
         <noscript
           dangerouslySetInnerHTML={{
             __html: `
@@ -123,7 +121,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           }}
         />
 
-        {/* ⬇️ FAQPage: sube FAQ/HowTo y ayuda al contenido semántico */}
+        {/* FAQPage */}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
@@ -137,8 +135,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   acceptedAnswer: {
                     "@type": "Answer",
                     text:
-                      "Evalúa crawlabilidad, descubribilidad, contenido semántico, robustez de renderizado e internacionalización. Cuanto más alto, mejor preparado está tu sitio para crawlers de IA.",
-                  },
+                      "Evalúa crawlabilidad, descubribilidad, contenido semántico, robustez de renderizado e internacionalización. Cuanto más alto, mejor preparado está tu sitio para crawlers de IA."
+                  }
                 },
                 {
                   "@type": "Question",
@@ -146,8 +144,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   acceptedAnswer: {
                     "@type": "Answer",
                     text:
-                      "Sumá contenido útil en el HTML inicial (SSR/prerender), agregá datos estructurados en JSON-LD, optimizá metadatos y evitá bloqueos en robots.txt y cabeceras.",
-                  },
+                      "Sumá contenido útil en el HTML inicial (SSR/prerender), agregá datos estructurados en JSON-LD, optimizá metadatos y evitá bloqueos en robots.txt y cabeceras."
+                  }
                 },
                 {
                   "@type": "Question",
@@ -155,10 +153,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   acceptedAnswer: {
                     "@type": "Answer",
                     text:
-                      "Ayuda activar HSTS, una política CSP compatible y protección contra clickjacking. También conviene declarar sitemap, canonical y mantener robots.txt abierto.",
-                  },
-                },
-              ],
+                      "Ayuda activar HSTS, una política CSP compatible y protección contra clickjacking. También conviene declarar sitemap, canonical y mantener robots.txt abierto."
+                  }
+                }
+              ]
             }),
           }}
         />
