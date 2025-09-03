@@ -240,6 +240,64 @@ const SearchBar = memo(function SearchBar({
   );
 });
 
+/* ---------- Hero bonito y semántico ---------- */
+function HeroIntro() {
+  return (
+    <section
+      aria-labelledby="intro-title"
+      style={{
+        width: "min(1128px, calc(100vw - 32px))",
+        margin: "0 auto 14px",
+      }}
+    >
+      <div
+        style={{
+          background:
+            "linear-gradient(180deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.04) 100%)",
+          border: "1px solid color-mix(in srgb, #ffffff 16%, transparent)",
+          borderRadius: 18,
+          padding: 20,
+          color: "#fff",
+          boxShadow: "0 8px 24px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.05)",
+        }}
+      >
+        <h1 id="intro-title" style={{ fontSize: 22, margin: "0 0 6px 0", lineHeight: 1.25 }}>
+          ¿Tu sitio es amigable para los crawlers de IA?
+        </h1>
+
+        <p
+          style={{
+            margin: "0 0 10px 0",
+            fontSize: 15.5,
+            opacity: 0.95,
+            maxWidth: 920,
+          }}
+        >
+          IA Friendly analiza tu URL y calcula un <strong>Score OAI</strong>. Revisa señales técnicas
+          (robots, sitemap, headers), contenido visible en el HTML inicial, <em>schema.org</em> y
+          bloqueos para bots. Te devuelve recomendaciones priorizadas para mejorar tu presencia en
+          motores de IA.
+        </p>
+
+        <ul
+          style={{
+            display: "grid",
+            gap: 6,
+            paddingLeft: 18,
+            margin: 0,
+            fontSize: 14.5,
+            opacity: 0.9,
+          }}
+        >
+          <li>Checklist técnico: crawlabilidad, descubribilidad y robustez de render.</li>
+          <li>Consejos accionables: meta-description, SSR/prerender y datos estructurados.</li>
+          <li>Compatible con OAI-SearchBot, gptbot, Gemini, Copilot, Perplexity y Claude.</li>
+        </ul>
+      </div>
+    </section>
+  );
+}
+
 /* ---------------- Componente ---------------- */
 export default function Home() {
   const [url, setUrl] = useState("");
@@ -302,42 +360,25 @@ export default function Home() {
       </motion.header>
 
       <div className="content-container">
-        {/* 🔧 Intro SSR visible para mejorar text-ratio y anti soft-404 */}
-        <section
-          aria-label="Descripción del servicio"
-          style={{
-            maxWidth: 960,
-            margin: "12px auto 8px",
-            lineHeight: 1.6,
-            fontSize: 15,
-            opacity: 0.95,
-          }}
-        >
-          <p>
-            IA Friendly es un auditor ligero que verifica si tu página está lista para los
-            crawlers de IA (como OAI-SearchBot). Analiza señales técnicas (robots, sitemap,
-            headers), contenido visible en el HTML inicial, datos estructurados y posibles
-            bloqueos contra bots. Ingresá una URL pública y obtené un reporte con un score
-            OAI y recomendaciones priorizadas por impacto. El objetivo es que los modelos de
-            IA puedan descubrir y entender mejor tu sitio.
-          </p>
-          <p className="muted" style={{ marginTop: 6 }}>
-            Sugerimos implementar mejoras como meta-descriptions informativas, marcado
-            schema.org (FAQ/HowTo cuando corresponda) y contenido crítico renderizado en el
-            HTML inicial, para evitar páginas “blancas” que dependan 100% de JavaScript.
-          </p>
-        </section>
-
-        {/* ======= BUSCADOR ======= */}
+        {/* ======= ESTADO INICIAL: Intro linda + buscador ======= */}
         {!hasResult ? (
-          <div
-            style={{
-              minHeight: "calc(100dvh - 140px)",
-              display: "grid",
-              placeItems: "center",
-            }}
-          >
-            <SearchBar url={url} setUrl={setUrl} loading={loading} onSubmit={handleSubmit} error={err} />
+          <div style={{ paddingTop: 8, paddingBottom: 16 }}>
+            <HeroIntro />
+            <div
+              style={{
+                display: "grid",
+                placeItems: "center",
+                minHeight: "calc(100dvh - 280px)",
+              }}
+            >
+              <SearchBar
+                url={url}
+                setUrl={setUrl}
+                loading={loading}
+                onSubmit={handleSubmit}
+                error={err}
+              />
+            </div>
           </div>
         ) : (
           <>
