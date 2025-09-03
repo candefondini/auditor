@@ -50,8 +50,8 @@ function isValidAuditableUrl(raw: string): boolean {
     const u = new URL(withProto);
     if (!/^https?:$/.test(u.protocol)) return false;
     const host = u.hostname;
-    if (!/^[a-z0-9.-]+$/i.test(host)) return false;          // letras/números/guiones/puntos
-    if (!/\.[a-z]{2,}$/i.test(host)) return false;           // TLD de 2+ letras (.ar ok), multinivel ok
+    if (!/^[a-z0-9.-]+$/i.test(host)) return false; // letras/números/guiones/puntos
+    if (!/\.[a-z]{2,}$/i.test(host)) return false; // TLD de 2+ letras (.ar ok), multinivel ok
     return true;
   } catch {
     return false;
@@ -103,13 +103,23 @@ function useLockBody(lock: boolean) {
   useEffect(() => {
     const original = document.body.style.overflow;
     if (lock) document.body.style.overflow = "hidden";
-    return () => { document.body.style.overflow = original; };
+    return () => {
+      document.body.style.overflow = original;
+    };
   }, [lock]);
 }
 
 function Modal({
-  open, onClose, children, labelledBy,
-}: { open: boolean; onClose: () => void; children: React.ReactNode; labelledBy?: string }) {
+  open,
+  onClose,
+  children,
+  labelledBy,
+}: {
+  open: boolean;
+  onClose: () => void;
+  children: React.ReactNode;
+  labelledBy?: string;
+}) {
   useLockBody(open);
   if (!open) return null;
   return (
@@ -118,18 +128,30 @@ function Modal({
       aria-modal="true"
       aria-labelledby={labelledBy}
       style={{
-        position: "fixed", inset: 0, zIndex: 50, display: "grid", placeItems: "center",
-        background: "rgba(0,0,0,.6)", backdropFilter: "blur(4px)",
+        position: "fixed",
+        inset: 0,
+        zIndex: 50,
+        display: "grid",
+        placeItems: "center",
+        background: "rgba(0,0,0,.6)",
+        backdropFilter: "blur(4px)",
       }}
-      onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
     >
       <div
         style={{
-          width: "min(880px, 92vw)", maxHeight: "85vh", overflow: "auto",
+          width: "min(880px, 92vw)",
+          maxHeight: "85vh",
+          overflow: "auto",
           background: "color-mix(in srgb, #ffffff 10%, transparent)",
           border: "1px solid color-mix(in srgb, #ffffff 18%, transparent)",
-          borderRadius: 18, padding: 16, color: "#fff",
-          boxShadow: "0 12px 40px rgba(0,0,0,.45)", animation: "modalIn .18s ease-out",
+          borderRadius: 18,
+          padding: 16,
+          color: "#fff",
+          boxShadow: "0 12px 40px rgba(0,0,0,.45)",
+          animation: "modalIn .18s ease-out",
         }}
       >
         {children}
@@ -145,13 +167,15 @@ function Modal({
 }
 
 /* ---- Helper Card (hover) ---- */
-type CardProps = HTMLAttributes<HTMLDivElement> & Partial<MotionProps> & { as?: ElementType; };
+type CardProps = HTMLAttributes<HTMLDivElement> & Partial<MotionProps> & { as?: ElementType };
 const Card: React.FC<CardProps> = ({ children, style, as: Comp = "div", ...rest }) => (
   <Comp
     {...rest}
     style={{
       background: "color-mix(in srgb, #ffffff 9%, transparent)",
-      color: "#fff", borderRadius: 18, padding: 12,
+      color: "#fff",
+      borderRadius: 18,
+      padding: 12,
       boxShadow: "0 8px 24px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.05)",
       border: "1px solid color-mix(in srgb, #ffffff 16%, transparent)",
       transition: "transform .2s ease, box-shadow .2s ease",
@@ -188,7 +212,12 @@ type SearchBarProps = {
 };
 
 const SearchBar = memo(function SearchBar({
-  url, setUrl, loading, onSubmit, error, top = false,
+  url,
+  setUrl,
+  loading,
+  onSubmit,
+  error,
+  top = false,
 }: SearchBarProps) {
   return (
     <Card style={{ ...SEARCH_CARD_STYLE, ...(top ? { marginTop: 12, marginBottom: 10 } : {}) }}>
@@ -251,7 +280,9 @@ export default function Home() {
     e.preventDefault();
     if (loading) return;
     if (!isValidAuditableUrl(url)) {
-      setErr("Ingresá una URL válida (https/http). Aceptamos dominios .ar y multinivel como .com.ar");
+      setErr(
+        "Ingresá una URL válida (https/http). Aceptamos dominios .ar y multinivel como .com.ar"
+      );
       return;
     }
     audit();
@@ -266,20 +297,61 @@ export default function Home() {
         transition={{ duration: 0.35 }}
       >
         <div className="header-content">
-          <h1 className="title-glitch" data-text="IA Friendly">IA Friendly</h1>
+          <h1 className="title-glitch" data-text="IA Friendly">
+            IA Friendly
+          </h1>
         </div>
       </motion.header>
 
       <div className="content-container">
-        {/* ======= BUSCADOR ======= */}
+        {/* ======= ESTADO: SIN RESULTADOS ======= */}
         {!hasResult ? (
-          <div
-            style={{
-              minHeight: "calc(100dvh - 140px)", // centra entre header y footer
-              display: "grid",
-              placeItems: "center",
-            }}
-          >
+          <div style={{ display: "grid", gap: 12 }}>
+            {/* Intro rica en texto para subir textRatio y evitar soft 404 */}
+            <Card style={{ ...SEARCH_CARD_STYLE }}>
+              <div className="section-title">
+                <div className="section-eyebrow">Qué es</div>
+                <h2 className="section-heading">Auditá tu sitio para crawlers de IA</h2>
+                <div className="section-divider" />
+                <p className="section-kicker">
+                  IA Friendly analiza señales técnicas que usan OAI-SearchBot, gptbot y otros
+                  crawlers. Te da un <strong>score de 0 a 100</strong> y un plan claro para mejorar.
+                </p>
+              </div>
+
+              <div style={{ marginTop: 10, display: "grid", gap: 8 }}>
+                <ul
+                  style={{
+                    listStyle: "disc",
+                    paddingLeft: 18,
+                    display: "grid",
+                    gap: 6,
+                  }}
+                >
+                  <li>
+                    <strong>Crawlabilidad:</strong> HTTPS, <code>robots.txt</code>, cabeceras.
+                  </li>
+                  <li>
+                    <strong>Descubribilidad:</strong> <code>&lt;title&gt;</code>, canonical, sitemap.
+                  </li>
+                  <li>
+                    <strong>Contenido & semántica:</strong> H1, JSON-LD, contenido en HTML inicial.
+                  </li>
+                  <li>
+                    <strong>Render/robustez:</strong> bloqueos anti-bot, paywalls y soft 404.
+                  </li>
+                  <li>
+                    <strong>Internacionalización:</strong> atributo <code>lang</code>.
+                  </li>
+                </ul>
+                <p className="muted small">
+                  Tip: cuanto más contenido útil sirvas en el HTML inicial (SSR/prerender), mejor
+                  te interpretan los crawlers y sube tu score.
+                </p>
+              </div>
+            </Card>
+
+            {/* Buscador */}
             <SearchBar
               url={url}
               setUrl={setUrl}
@@ -287,16 +359,38 @@ export default function Home() {
               onSubmit={handleSubmit}
               error={err}
             />
+
+            {/* Mini-FAQ visible para sumar semántica */}
+            <Card style={{ ...SEARCH_CARD_STYLE }}>
+              <h2 className="section-heading" style={{ marginTop: 0 }}>Preguntas frecuentes</h2>
+              <div className="section-divider" />
+              <details style={{ marginTop: 8 }}>
+                <summary><strong>¿Qué mide el score OAI?</strong></summary>
+                <p style={{ marginTop: 6 }}>
+                  Combina señales de crawlabilidad, descubribilidad, contenido semántico,
+                  robustez de render e i18n. Es un indicador práctico de preparación para IA.
+                </p>
+              </details>
+              <details style={{ marginTop: 8 }}>
+                <summary><strong>¿Cómo mejoro rápido?</strong></summary>
+                <p style={{ marginTop: 6 }}>
+                  Agregá contenido clave en el HTML inicial, sumá JSON-LD (schema.org) y revisá
+                  <code> robots.txt</code> y cabeceras para no bloquear bots legítimos.
+                </p>
+              </details>
+              <details style={{ marginTop: 8 }}>
+                <summary><strong>¿Necesito cambios de servidor?</strong></summary>
+                <p style={{ marginTop: 6 }}>
+                  Ayuda habilitar HSTS, una CSP compatible y proteger contra clickjacking. Declarar
+                  sitemap y canonical también suma.
+                </p>
+              </details>
+            </Card>
           </div>
         ) : (
           <>
-            <SearchBar
-              url={url}
-              setUrl={setUrl}
-              loading={loading}
-              onSubmit={handleSubmit}
-              top
-            />
+            {/* ======= BUSCADOR (estado con resultados) ======= */}
+            <SearchBar url={url} setUrl={setUrl} loading={loading} onSubmit={handleSubmit} top />
             {err && <div className="error-message">Error: {err}</div>}
           </>
         )}
@@ -338,7 +432,9 @@ export default function Home() {
               {data.accessibleForOAI === false && (data.blockedReasons?.length || 0) > 0 && (
                 <ul style={{ marginTop: 8, paddingLeft: 18 }}>
                   {(data.blockedReasons || []).map((r: string, i: number) => (
-                    <li key={i} className="muted">{r}</li>
+                    <li key={i} className="muted">
+                      {r}
+                    </li>
                   ))}
                 </ul>
               )}
@@ -368,9 +464,7 @@ export default function Home() {
                     <div className="score-header" style={{ marginTop: 10 }}>
                       <div className="score-value" style={{ marginBottom: 6 }}>
                         Preparación global:{" "}
-                        <span className={`score-chip chip-${tone(data.iaReadiness)}`}>
-                          {data.iaReadiness}
-                        </span>
+                        <span className={`score-chip chip-${tone(data.iaReadiness)}`}>{data.iaReadiness}</span>
                         /100
                       </div>
                       <div className="score-bar">
@@ -393,7 +487,16 @@ export default function Home() {
                         ["Claude", scores.claude],
                       ];
                       return (
-                        <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "grid", gap: 6, fontSize: 14 }}>
+                        <ul
+                          style={{
+                            listStyle: "none",
+                            padding: 0,
+                            margin: 0,
+                            display: "grid",
+                            gap: 6,
+                            fontSize: 14,
+                          }}
+                        >
                           {rows.map(([label, val]) => (
                             <li
                               key={label}
@@ -455,7 +558,9 @@ export default function Home() {
                 <Card>
                   <div className="score-header">
                     <div className="score-details">
-                      <div className="muted" style={{ wordBreak: "break-word" }}>{data.finalUrl || data.url}</div>
+                      <div className="muted" style={{ wordBreak: "break-word" }}>
+                        {data.finalUrl || data.url}
+                      </div>
                       <div className="score-value" style={{ margin: "6px 0" }}>
                         Score OAI: <span className={`score-chip chip-${tone(data.overall!)}`}>{data.overall}</span>/100
                       </div>
@@ -485,11 +590,14 @@ export default function Home() {
                         <ul className="category-items">
                           {Object.entries(b.items || {}).map(([k, v]) => {
                             const label = LABELS[k] || k;
-                            const normalized = typeof v === "boolean" ? (NEGATIVE_TRUE.has(k) ? !v : v) : v;
+                            const normalized =
+                              typeof v === "boolean" ? (NEGATIVE_TRUE.has(k) ? !v : v) : v;
                             return (
                               <li key={k} className="category-item">
                                 <span>{label}</span>
-                                <span>{typeof normalized === "boolean" ? (normalized ? "✔" : "✖") : String(normalized)}</span>
+                                <span>
+                                  {typeof normalized === "boolean" ? (normalized ? "✔" : "✖") : String(normalized)}
+                                </span>
                               </li>
                             );
                           })}
@@ -528,7 +636,9 @@ export default function Home() {
                           <div style={{ fontWeight: 600 }}>{s.title}</div>
                           {s.detail && <div className="muted small">{s.detail}</div>}
                         </div>
-                        <div>{s.impactPts} pts · {s.effort}</div>
+                        <div>
+                          {s.impactPts} pts · {s.effort}
+                        </div>
                       </motion.li>
                     ))}
                   </ul>
@@ -559,17 +669,24 @@ export default function Home() {
             <Card>
               <div
                 style={{
-                  display: "flex", gap: 12, alignItems: "center",
-                  justifyContent: "space-between", flexWrap: "wrap",
+                  display: "flex",
+                  gap: 12,
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  flexWrap: "wrap",
                 }}
               >
                 <div>
                   <h3 style={{ margin: 0 }}>¿Querés subir tu puntaje?</h3>
-                  <p style={{ margin: "4px 0 0 0" }}>Con una asesoría rápida te ayudamos a implementar las mejoras clave.</p>
+                  <p style={{ margin: "4px 0 0 0" }}>
+                    Con una asesoría rápida te ayudamos a implementar las mejoras clave.
+                  </p>
                 </div>
                 <button
-                  type="button" className="btn-audit"
-                  onClick={() => setShowForm(true)} aria-expanded={showForm}
+                  type="button"
+                  className="btn-audit"
+                  onClick={() => setShowForm(true)}
+                  aria-expanded={showForm}
                 >
                   Contactanos
                 </button>
@@ -579,8 +696,12 @@ export default function Home() {
             {/* Modal */}
             <Modal open={showForm} onClose={() => setShowForm(false)} labelledBy="contactanos-title">
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", gap: 10 }}>
-                <h3 id="contactanos-title" style={{ margin: 0, fontSize: 18, fontWeight: 800 }}>Contactanos</h3>
-                <button type="button" className="btn-secondary" onClick={() => setShowForm(false)}>Cerrar</button>
+                <h3 id="contactanos-title" style={{ margin: 0, fontSize: 18, fontWeight: 800 }}>
+                  Contactanos
+                </h3>
+                <button type="button" className="btn-secondary" onClick={() => setShowForm(false)}>
+                  Cerrar
+                </button>
               </div>
               <div style={{ marginTop: 12 }}>
                 <LeadCTA score={data.overall!} url={data.finalUrl || data.url!} />
@@ -593,7 +714,13 @@ export default function Home() {
       <footer className="site-footer" aria-label="Pie de página">
         <div className="footer-inner">
           DEVELOPED BY{" "}
-          <a href="https://coso.ar" className="brand brand-link" target="_blank" rel="noopener noreferrer" title="Ir a coso.ar">
+          <a
+            href="https://coso.ar"
+            className="brand brand-link"
+            target="_blank"
+            rel="noopener noreferrer"
+            title="Ir a coso.ar"
+          >
             COSO
           </a>
         </div>
