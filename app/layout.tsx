@@ -15,9 +15,9 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://prompte.ar"),
-  title: { default: "IA Friendly", template: "%s | promte.ar" },
+  title: { default: "IA Friendly", template: "%s | prompte.ar" }, // <- prompte.ar
   description: "Auditoría de accesibilidad para OAI-SearchBot.",
-  applicationName: "promte.ar",
+  applicationName: "prompte.ar", // <- prompte.ar
   keywords: ["accesibilidad", "SEO", "auditor", "OAI", "promte", "coso"],
   authors: [{ name: "Coso", url: "https://coso.ar" }],
   creator: "Coso",
@@ -25,8 +25,8 @@ export const metadata: Metadata = {
   alternates: { canonical: "/", languages: { "es-AR": "/" } },
   openGraph: {
     type: "website",
-    url: "https://prompte.ar",
-    siteName: "promte.ar",
+    url: "https://prompte.ar",        // <- prompte.ar
+    siteName: "prompte.ar",           // <- prompte.ar
     title: "IA Friendly",
     description: "Auditoría de accesibilidad para OAI-SearchBot.",
     images: [{ url: "/og.png", width: 1200, height: 630, alt: "IA Friendly" }],
@@ -58,7 +58,7 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
-  const GTM_ID = "GTM-K5X5H8QK"; // si querés, pasalo a NEXT_PUBLIC_GTM_ID
+  const GTM_ID = "GTM-K5X5H8QK";
 
   return (
     <html lang="es">
@@ -96,7 +96,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               "@type": "Organization",
               name: "Coso",
               url: "https://coso.ar",
-              logo: "https://prompte.ar/og.png",
+              logo: "https://prompte.ar/og.png", // <- prompte.ar
               sameAs: [],
             }),
           }}
@@ -109,7 +109,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               "@context": "https://schema.org",
               "@type": "WebApplication",
               name: "IA Friendly",
-              url: "https://prompte.ar",
+              url: "https://prompte.ar", // <- prompte.ar
               applicationCategory: "DeveloperApplication",
               operatingSystem: "All",
             }),
