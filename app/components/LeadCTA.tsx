@@ -6,19 +6,17 @@ export default function LeadCTA({ score, url }: { score: number; url: string }) 
   const [form, setForm] = useState({
     nombre: "",
     email: "",
-    phone: "",         // 👈 nuevo
+    phone: "",          // WhatsApp en formato internacional
     sitio: url || "",
     comentario: "",
   });
   const [status, setStatus] = useState<"idle" | "loading" | "ok" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  // 👇 REEMPLAZÁ por tu Production URL de n8n (no /webhook-test/)
-  const N8N_WEBHOOK_URL = "https://coso.app.n8n.cloud/webhook/form-auditor";
-
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
     setForm({ ...form, [e.target.name]: e.target.value });
 
+  // Validación simple E.164 (ej: +5492610000000)
   const isE164 = (value: string) => /^\+\d{6,15}$/.test(value.trim());
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -26,54 +24,31 @@ export default function LeadCTA({ score, url }: { score: number; url: string }) 
     setStatus("loading");
     setErrorMsg(null);
 
-    // Validación mínima de teléfono
     if (!isE164(form.phone)) {
       setStatus("error");
-      setErrorMsg("Ingresá el WhatsApp en formato internacional, ej: +54XXXXXXXXXX");
+      setErrorMsg("Ingresá el WhatsApp en formato internacional, ej: +5492610000000");
       return;
     }
 
     try {
-      // Lo que ya esperaba tu API local para mail
-      const payloadApi = {
+      // Tu API /api/lead ahora despacha mail + WhatsApp en el server
+      const payload = {
         nombre: form.nombre,
         email: form.email,
-        site: form.sitio, // tu /api/lead espera "site"
+        site: form.sitio,        // /api/lead espera "site"
         comentario: form.comentario,
+        phone: form.phone,       // importante: el server lo envía a n8n
       };
 
-      // Lo que va al flujo de n8n → Twilio WhatsApp
-      const payloadN8n = {
-        name: form.nombre,
-        email: form.email,
-        phone: form.phone,     // 👈 clave para WhatsApp
-        url: form.sitio,
-        message: form.comentario,
-      };
+      const res = await fetch("/api/lead", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
 
-      // Enviamos ambas cosas en paralelo (mail + WhatsApp)
-      const [resApi, resN8n] = await Promise.allSettled([
-        fetch("/api/lead", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payloadApi),
-        }),
-        fetch(N8N_WEBHOOK_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          // Si tu n8n está detrás de CORS estricto y falla,
-          // podemos agregar un preflight/OPTIONS en n8n o usar proxy en /api/lead.
-          body: JSON.stringify(payloadN8n),
-        }),
-      ]);
-
-      const apiOk =
-        resApi.status === "fulfilled" && (resApi.value as Response).ok;
-      const n8nOk =
-        resN8n.status === "fulfilled" && (resN8n.value as Response).ok;
-
-      if (!apiOk && !n8nOk) {
-        throw new Error("No pudimos procesar tu solicitud en este momento.");
+      if (!res.ok) {
+        const msg = await res.text().catch(() => "");
+        throw new Error(msg || "No pudimos procesar tu solicitud en este momento.");
       }
 
       setStatus("ok");
@@ -130,6 +105,7 @@ export default function LeadCTA({ score, url }: { score: number; url: string }) 
             />
           </div>
 
+          {/* WhatsApp */}
           <div className="field">
             <label htmlFor="phone">WhatsApp</label>
             <input
@@ -138,7 +114,7 @@ export default function LeadCTA({ score, url }: { score: number; url: string }) 
               name="phone"
               value={form.phone}
               onChange={handleChange}
-              placeholder="+54XXXXXXXXXX"
+              placeholder="+5492610000000"
               required
             />
           </div>
@@ -165,7 +141,7 @@ export default function LeadCTA({ score, url }: { score: number; url: string }) 
               name="comentario"
               value={form.comentario}
               onChange={handleChange}
-              placeholder="Contanos si solicitás algo en particular..."
+              placeholder="Contanos si solicitás algo en particular…"
               rows={4}
             />
           </div>
@@ -178,14 +154,12 @@ export default function LeadCTA({ score, url }: { score: number; url: string }) 
 
           {status === "ok" && <span className="pill pill-ok">¡Enviado con éxito!</span>}
           {status === "error" && (
-            <span className="pill pill-bad">
-              Error{errorMsg ? ` — ${errorMsg}` : ""}
-            </span>
+            <span className="pill pill-bad">Error{errorMsg ? ` — ${errorMsg}` : ""}</span>
           )}
         </div>
       </form>
 
-      {/* Scoped styles */}
+      {/* Scoped styles (tus estilos) */}
       <style jsx>{`
         .lead-card {
           width: min(440px, 92vw);
