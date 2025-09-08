@@ -17,7 +17,7 @@ export default function LeadCTA({ score, url }: Props) {
   const scoreLine = Number.isFinite(score) ? `Mi score actual es ${score}.` : "";
 
   const mensajeSugerido = useMemo(() => {
-    const nom = (nombre || "").trim() || "Soy un usuario";
+    const nom = (nombre || "").trim() || "un usuario";
     const link = (sitio || "").trim() || "https://tu-sitio.com";
     return [
       `Hola! Soy ${nom}.`,

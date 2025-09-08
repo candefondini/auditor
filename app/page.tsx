@@ -2,46 +2,39 @@
 
 import React, { useEffect, useRef, useState, memo } from "react";
 import { motion } from "framer-motion";
+import Link from "next/link";
 import LeadCTA from "./components/LeadCTA";
 
-/* Tipos para Framer + React */
+/* Tipos */
 import type { HTMLAttributes, ElementType } from "react";
 import type { MotionProps } from "framer-motion";
 
-/* ---------------- Tipos & helpers ---------------- */
+/* ---------------- Helpers ---------------- */
 const LABELS: Record<string, string> = {
-  // Crawlabilidad
   http2xx: "La página responde correctamente",
   https: "Conexión segura (HTTPS)",
   contentTypeHtml: "Se entrega como una página web",
   robotsAllowed: "Permite la indexación de los bots",
   xRobotsOk: "Cabeceras no bloquean los bots de búsqueda",
-  // Descubribilidad
   titleOk: "Título claro (10–70 caracteres)",
   canonicalOk: "Canonical definido",
   metaNoindex: "No bloquea con “meta robots”",
   sitemapInRobots: "Sitemap declarado en robots.txt",
-  // Contenido & Semántica
   h1Ok: "Contiene un encabezado principal (H1)",
   textRatioOk: "Contenido visible en el HTML inicial",
   schemaOk: "Datos estructurados (schema.org)",
   faqOk: "FAQ/HowTo (si aplica)",
-  // Render / Robustez
   antiBotLikely: "No tiene bloqueos agresivos contra bots",
   paywallHint: "No tiene un paywall que bloquea el contenido",
   soft404: "No aparenta ser un ‘Soft 404’",
-  // i18n
   langAttr: "Idioma correctamente declarado (lang)",
 };
-
 const NEGATIVE_TRUE = new Set(["metaNoindex", "antiBotLikely", "paywallHint", "soft404"]);
 const tone = (n: number) => (n <= 70 ? "red" : n <= 80 ? "amber" : "green");
 
-/** Normaliza agregando https:// si falta */
 const normalizeUrl = (raw: string) =>
   /^https?:\/\//i.test(raw.trim()) ? raw.trim() : `https://${raw.trim()}`;
 
-/** Valida URLs http(s) con TLD de 2+ letras y soporta multinivel (.com.ar, .gob.ar, etc.) */
 function isValidAuditableUrl(raw: string): boolean {
   const input = raw.trim();
   if (!input) return false;
@@ -59,99 +52,54 @@ function isValidAuditableUrl(raw: string): boolean {
 }
 
 type PerModel = "chatgpt" | "gemini" | "copilot" | "perplexity" | "claude";
-
-/** Tipo minimal para destrabar TS sin listar TODO ahora. */
 type AuditResponse = {
   url?: string;
   finalUrl?: string;
   uaTried?: string;
   strict?: boolean;
-
   accessibleForOAI?: boolean;
   blockedReasons?: string[];
   overall?: number;
-
   iaReadiness?: number;
   perModelScores?: Partial<Record<PerModel, number>>;
   iaHints?: string[];
-
   breakdown?: { category: string; score: number; items: Record<string, any> }[];
-
-  suggestions?: {
-    id: string;
-    title: string;
-    impactPts: number;
-    effort: "low" | "med" | "high";
-    detail?: string;
-  }[];
-
-  extras?: {
-    metaDescription: { present: boolean; length: number; ok: boolean; sample: string };
-    aiDirectives: { metaNoAI: boolean; xRobotsNoAI: boolean };
-    robotsPerBot: { oai: boolean; gpt: boolean; wildcard: boolean };
-    securityHeaders: { hsts: boolean; csp: boolean; clickjackProtected: boolean };
-  };
-
+  suggestions?: { id: string; title: string; impactPts: number; effort: "low" | "med" | "high"; detail?: string }[];
   extrasSuggestions?: { title: string; detail?: string }[];
   raw?: any;
-
   [key: string]: any;
 };
 
-/* ---------- Modal “Contactanos” (bloquea scroll) ---------- */
+/* ---------- Modal ---------- */
 function useLockBody(lock: boolean) {
   useEffect(() => {
     const original = document.body.style.overflow;
     if (lock) document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = original;
-    };
+    return () => { document.body.style.overflow = original; };
   }, [lock]);
 }
 
 function Modal({
-  open,
-  onClose,
-  children,
-  labelledBy,
-}: {
-  open: boolean;
-  onClose: () => void;
-  children: React.ReactNode;
-  labelledBy?: string;
-}) {
+  open, onClose, children, labelledBy,
+}: { open: boolean; onClose: () => void; children: React.ReactNode; labelledBy?: string; }) {
   useLockBody(open);
   if (!open) return null;
   return (
     <div
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby={labelledBy}
+      role="dialog" aria-modal="true" aria-labelledby={labelledBy}
       style={{
-        position: "fixed",
-        inset: 0,
-        zIndex: 50,
-        display: "grid",
-        placeItems: "center",
-        background: "rgba(0,0,0,.6)",
-        backdropFilter: "blur(4px)",
+        position: "fixed", inset: 0, zIndex: 50, display: "grid", placeItems: "center",
+        background: "rgba(0,0,0,.6)", backdropFilter: "blur(4px)",
       }}
-      onMouseDown={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
+      onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div
         style={{
-          width: "min(880px, 92vw)",
-          maxHeight: "85vh",
-          overflow: "auto",
+          width: "min(880px, 92vw)", maxHeight: "85vh", overflow: "auto",
           background: "color-mix(in srgb, #ffffff 10%, transparent)",
           border: "1px solid color-mix(in srgb, #ffffff 18%, transparent)",
-          borderRadius: 18,
-          padding: 16,
-          color: "#fff",
-          boxShadow: "0 12px 40px rgba(0,0,0,.45)",
-          animation: "modalIn .18s ease-out",
+          borderRadius: 18, padding: 16, color: "#fff",
+          boxShadow: "0 12px 40px rgba(0,0,0,.45)", animation: "modalIn .18s ease-out",
         }}
       >
         {children}
@@ -166,16 +114,14 @@ function Modal({
   );
 }
 
-/* ---- Helper Card (hover) ---- */
+/* ---- Card ---- */
 type CardProps = HTMLAttributes<HTMLDivElement> & Partial<MotionProps> & { as?: ElementType };
 const Card: React.FC<CardProps> = ({ children, style, as: Comp = "div", ...rest }) => (
   <Comp
     {...rest}
     style={{
       background: "color-mix(in srgb, #ffffff 9%, transparent)",
-      color: "#fff",
-      borderRadius: 18,
-      padding: 12,
+      color: "#fff", borderRadius: 18, padding: 12,
       boxShadow: "0 8px 24px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.05)",
       border: "1px solid color-mix(in srgb, #ffffff 16%, transparent)",
       transition: "transform .2s ease, box-shadow .2s ease",
@@ -195,7 +141,7 @@ const Card: React.FC<CardProps> = ({ children, style, as: Comp = "div", ...rest 
   </Comp>
 );
 
-/* --------- SearchBar (memo) - estable, no pierde foco --------- */
+/* ---- SearchBar ---- */
 const SEARCH_CARD_STYLE: React.CSSProperties = {
   width: "min(1128px, calc(100vw - 32px))",
   padding: 16,
@@ -203,32 +149,20 @@ const SEARCH_CARD_STYLE: React.CSSProperties = {
 };
 
 type SearchBarProps = {
-  url: string;
-  setUrl: (v: string) => void;
-  loading: boolean;
-  onSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
-  error?: string | null;
-  top?: boolean;
+  url: string; setUrl: (v: string) => void; loading: boolean;
+  onSubmit: (e: React.FormEvent<HTMLFormElement>) => void; error?: string | null; top?: boolean;
 };
 
 const SearchBar = memo(function SearchBar({
-  url,
-  setUrl,
-  loading,
-  onSubmit,
-  error,
-  top = false,
+  url, setUrl, loading, onSubmit, error, top = false,
 }: SearchBarProps) {
   return (
     <Card style={{ ...SEARCH_CARD_STYLE, ...(top ? { marginTop: 12, marginBottom: 10 } : {}) }}>
       <form className="input-container" onSubmit={onSubmit} noValidate>
         <input
-          value={url}
-          onChange={(e) => setUrl(e.target.value)}
+          value={url} onChange={(e) => setUrl(e.target.value)}
           placeholder="https://tu-sitio.com.ar/pagina"
-          className="input-url"
-          inputMode="url"
-          autoComplete="off"
+          className="input-url" inputMode="url" autoComplete="off"
           style={{ flex: "1 1 0%", minWidth: 0 }}
         />
         <button type="submit" disabled={loading} className="btn-audit">
@@ -240,66 +174,11 @@ const SearchBar = memo(function SearchBar({
   );
 });
 
-/* ---------- Hero bonito y semántico ---------- */
-function HeroIntro() {
-  return (
-    <section
-      aria-labelledby="intro-title"
-      style={{
-        width: "min(1128px, calc(100vw - 32px))",
-        margin: "0 auto 14px",
-      }}
-    >
-      <div
-        style={{
-          background:
-            "linear-gradient(180deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.04) 100%)",
-          border: "1px solid color-mix(in srgb, #ffffff 16%, transparent)",
-          borderRadius: 18,
-          padding: 20,
-          color: "#fff",
-          boxShadow: "0 8px 24px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.05)",
-        }}
-      >
-        <h1 id="intro-title" style={{ fontSize: 22, margin: "0 0 6px 0", lineHeight: 1.25 }}>
-          ¿Tu sitio es amigable para los crawlers de IA?
-        </h1>
-
-        <p
-          style={{
-            margin: "0 0 10px 0",
-            fontSize: 15.5,
-            opacity: 0.95,
-            maxWidth: 920,
-          }}
-        >
-          IA Friendly analiza tu URL y calcula un <strong>Score OAI</strong>. Revisa señales técnicas
-          (robots, sitemap, headers), contenido visible en el HTML inicial, <em>schema.org</em> y
-          bloqueos para bots. Te devuelve recomendaciones priorizadas para mejorar tu presencia en
-          motores de IA.
-        </p>
-
-        <ul
-          style={{
-            display: "grid",
-            gap: 6,
-            paddingLeft: 18,
-            margin: 0,
-            fontSize: 14.5,
-            opacity: 0.9,
-          }}
-        >
-          <li>Checklist técnico: crawlabilidad, descubribilidad y robustez de render.</li>
-          <li>Consejos accionables: meta-description, SSR/prerender y datos estructurados.</li>
-          <li>Compatible con OAI-SearchBot, gptbot, Gemini, Copilot, Perplexity y Claude.</li>
-        </ul>
-      </div>
-    </section>
-  );
-}
-
-/* ---------------- Componente ---------------- */
+/* ---------------- Home ---------------- */
 export default function Home() {
+  const [mounted, setMounted] = useState(false);          // ← gate de montaje
+  useEffect(() => { setMounted(true); }, []);
+
   const [url, setUrl] = useState("");
   const [data, setData] = useState<AuditResponse>({});
   const [err, setErr] = useState<string | null>(null);
@@ -313,11 +192,7 @@ export default function Home() {
     data.breakdown.length > 0;
 
   const audit = async () => {
-    setLoading(true);
-    setErr(null);
-    setData({});
-    setShowForm(false);
-
+    setLoading(true); setErr(null); setData({}); setShowForm(false);
     try {
       const safeUrl = normalizeUrl(url);
       const r = await fetch(`/api/audit?url=${encodeURIComponent(safeUrl)}`);
@@ -329,9 +204,7 @@ export default function Home() {
       setData(j);
     } catch (e: any) {
       setErr(e?.message || "Ocurrió un error inesperado.");
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   };
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -344,41 +217,46 @@ export default function Home() {
     audit();
   };
 
+  // SSR-safe skeleton (mismo header; sin motion hasta montar)
+  if (!mounted) {
+    return (
+      <main className="main-container" style={{ color: "#fff" }}>
+        <header className="header">
+          <div className="header-content">
+            <h1 className="title-glitch" data-text="IA Friendly">IA Friendly</h1>
+          </div>
+        </header>
+        <div className="content-container" />
+      </main>
+    );
+  }
+
   return (
     <main className="main-container" style={{ color: "#fff" }}>
+      {/* Header (motion sin initial distinto en SSR) */}
       <motion.header
         className="header"
-        initial={{ opacity: 0, y: -8 }}
+        initial={false}                          // ✅ evita mismatch
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.35 }}
       >
         <div className="header-content">
-          <h1 className="title-glitch" data-text="IA Friendly">
-            IA Friendly
-          </h1>
+          <h1 className="title-glitch" data-text="IA Friendly">IA Friendly</h1>
         </div>
       </motion.header>
 
       <div className="content-container">
-        {/* ======= ESTADO INICIAL: Intro linda + buscador ======= */}
+        {/* ======= ESTADO INICIAL: BUSCADOR CENTRADO ======= */}
         {!hasResult ? (
-          <div style={{ paddingTop: 8, paddingBottom: 16 }}>
-            <HeroIntro />
-            <div
-              style={{
-                display: "grid",
-                placeItems: "center",
-                minHeight: "calc(100dvh - 280px)",
-              }}
-            >
-              <SearchBar
-                url={url}
-                setUrl={setUrl}
-                loading={loading}
-                onSubmit={handleSubmit}
-                error={err}
-              />
-            </div>
+          <div
+            style={{
+              display: "grid",
+              placeItems: "center",
+              minHeight: "calc(100dvh - 160px)", // centrado vertical real
+              padding: "12px 0",
+            }}
+          >
+            <SearchBar url={url} setUrl={setUrl} loading={loading} onSubmit={handleSubmit} error={err} />
           </div>
         ) : (
           <>
@@ -390,263 +268,105 @@ export default function Home() {
         {/* ======= RESULTADOS ======= */}
         {hasResult && (
           <div ref={reportRef} style={{ display: "grid", gap: 16 }}>
-            {/* Estado accesible / bloqueado */}
-            <Card
-              style={{
-                marginTop: 6,
-                borderLeft: `4px solid ${data.accessibleForOAI ? "#1b7f4d" : "#b21f2d"}`,
-              }}
-            >
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  gap: 12,
-                  alignItems: "center",
-                  flexWrap: "wrap",
-                }}
-              >
-                <div>
-                  <strong>
-                    {data.accessibleForOAI ? "Accesible para OAI-SearchBot" : "Bloqueado para OAI-SearchBot"}
-                  </strong>
-                  <div className="muted small" style={{ marginTop: 4, wordBreak: "break-word" }}>
-                    URL solicitada: {data.url}
-                    {data.finalUrl && data.finalUrl !== data.url ? <> · URL final: {data.finalUrl}</> : null}
-                    {typeof data.strict !== "undefined" ? <> · modo estricto: {String(data.strict)}</> : null}
-                  </div>
-                </div>
-                <div className={`score-chip chip-${tone(data.overall!)}`} title="Score OAI">
-                  {data.overall}
-                </div>
-              </div>
-
-              {data.accessibleForOAI === false && (data.blockedReasons?.length || 0) > 0 && (
-                <ul style={{ marginTop: 8, paddingLeft: 18 }}>
-                  {(data.blockedReasons || []).map((r: string, i: number) => (
-                    <li key={i} className="muted">
-                      {r}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </Card>
-
-            {(data.perModelScores ||
-              typeof data.iaReadiness === "number" ||
-              (Array.isArray(data.iaHints) && data.iaHints.length > 0)) && (
-              <div className="two-col-md">
-                {/* Preparación IA */}
-                <Card
-                  as={motion.div}
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.2 }}
-                  style={{ display: "flex", flexDirection: "column", gap: 8 }}
-                >
-                  <div className="section-title">
-                    <div className="section-eyebrow">Resultados</div>
-                    <h2 className="section-heading">Preparación para IA</h2>
-                    <div className="section-divider" />
-                    <p className="section-kicker">Qué tan listo está tu sitio (0–100).</p>
-                  </div>
-
-                  {typeof data.iaReadiness === "number" && (
-                    <div className="score-header" style={{ marginTop: 10 }}>
-                      <div className="score-value" style={{ marginBottom: 6 }}>
-                        Preparación global:{" "}
-                        <span className={`score-chip chip-${tone(data.iaReadiness)}`}>{data.iaReadiness}</span>
-                        /100
-                      </div>
-                      <div className="score-bar">
-                        <div
-                          className={`score-progress progress-${tone(data.iaReadiness)}`}
-                          style={{ width: `${data.iaReadiness}%` }}
-                        />
-                      </div>
-                    </div>
-                  )}
-
-                  <div style={{ marginTop: 12, display: "grid", gap: 6 }}>
-                    {(() => {
-                      const scores = (data.perModelScores || {}) as Partial<Record<string, number>>;
-                      const rows: Array<[string, number | undefined]> = [
-                        ["ChatGPT", scores.chatgpt],
-                        ["Gemini", scores.gemini],
-                        ["Copilot", scores.copilot],
-                        ["Perplexity", scores.perplexity],
-                        ["Claude", scores.claude],
-                      ];
-                      return (
-                        <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "grid", gap: 6, fontSize: 14 }}>
-                          {rows.map(([label, val]) => (
-                            <li
-                              key={label}
-                              style={{
-                                display: "flex",
-                                justifyContent: "space-between",
-                                background: "rgba(255,255,255,.04)",
-                                padding: "6px 8px",
-                                borderRadius: 10,
-                              }}
-                            >
-                              <span>{label}</span>
-                              <span className={`score-chip chip-${tone(typeof val === "number" ? val : 0)}`}>
-                                {typeof val === "number" ? val : "—"}
-                              </span>
-                            </li>
-                          ))}
-                        </ul>
-                      );
-                    })()}
-                  </div>
-                </Card>
-
-                {/* Sugerencias IA */}
-                <Card
-                  as={motion.div}
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.25 }}
-                  style={{ display: "flex", flexDirection: "column", gap: 8 }}
-                >
-                  <div className="section-title">
-                    <div className="section-eyebrow">Optimización</div>
-                    <h2 className="section-heading">Sugerencias para IA</h2>
-                    <div className="section-divider" />
-                    <p className="section-kicker">Acciones para que los crawlers de IA entiendan mejor tu sitio.</p>
-                  </div>
-
-                  <ul style={{ listStyle: "disc", paddingLeft: 18, marginTop: 8, display: "grid", gap: 6 }}>
-                    {Array.isArray(data.iaHints) && data.iaHints.length > 0 ? (
-                      data.iaHints.map((h: string, i: number) => <li key={i}>{h}</li>)
-                    ) : (
-                      <li style={{ opacity: 0.7 }}>Sin sugerencias específicas para IA.</li>
-                    )}
-                  </ul>
-                </Card>
-              </div>
-            )}
-
-            {/* ============= SECCIÓN FINAL EN DOS COLUMNAS ============= */}
-            <div className="two-col-md" style={{ marginTop: 4 }}>
-              {/* IZQUIERDA: URL + SCORE + BREAKDOWN */}
-              <motion.section
-                className="score-section"
-                initial={{ opacity: 0, y: 10 }}
+            <div className="two-col-md">
+              {/* Preparación IA */}
+              <Card
+                as={motion.div}
+                initial={false}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.35, delay: 0.08 }}
+                transition={{ duration: 0.2 }}
+                style={{ display: "flex", flexDirection: "column", gap: 8 }}
               >
-                <Card>
-                  <div className="score-header">
-                    <div className="score-details">
-                      <div className="muted" style={{ wordBreak: "break-word" }}>
-                        {data.finalUrl || data.url}
-                      </div>
-                      <div className="score-value" style={{ margin: "6px 0" }}>
-                        Score OAI: <span className={`score-chip chip-${tone(data.overall!)}`}>{data.overall}</span>/100
-                      </div>
-                      <div className="muted">UA: {data.uaTried}</div>
+                <div className="section-title">
+                  <div className="section-eyebrow">Resultados</div>
+                  <h2 className="section-heading">
+                    Preparación para IA{" "}
+                    <span className="chip small" title="Índice técnico por modelo">Índice técnico</span>{" "}
+                  </h2>
+                  <div className="section-divider" />
+                  <p className="section-kicker">
+                    Qué tan listo está tu sitio (0–100) para que los modelos entiendan tu contenido.
+                  </p>
+                </div>
+
+                {typeof data.iaReadiness === "number" && (
+                  <div className="score-header" style={{ marginTop: 10 }}>
+                    <div className="score-value" style={{ marginBottom: 6 }}>
+                      Preparación global:{" "}
+                      <span className={`score-chip chip-${tone(data.iaReadiness)}`}>{data.iaReadiness}</span>
+                      /100
                     </div>
                     <div className="score-bar">
                       <div
-                        className={`score-progress progress-${tone(data.overall!)}`}
-                        style={{ width: `${data.overall}%` }}
+                        className={`score-progress progress-${tone(data.iaReadiness)}`}
+                        style={{ width: `${data.iaReadiness}%` }}
                       />
                     </div>
                   </div>
+                )}
 
-                  <div className="categories">
-                    {(data.breakdown || []).map((b: any, i: number) => (
-                      <motion.div
-                        key={b.category}
-                        className="category-card card"
-                        initial={{ opacity: 0, y: 12 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.35, delay: 0.1 + i * 0.04 }}
-                      >
-                        <div className="category-header">
-                          <h3>{b.category}</h3>
-                          <span className={`category-score badge-${tone(b.score)}`}>{b.score}</span>
-                        </div>
-                        <ul className="category-items">
-                          {Object.entries(b.items || {}).map(([k, v]) => {
-                            const label = LABELS[k] || k;
-                            const normalized = typeof v === "boolean" ? (NEGATIVE_TRUE.has(k) ? !v : v) : v;
-                            return (
-                              <li key={k} className="category-item">
-                                <span>{label}</span>
-                                <span>
-                                  {typeof normalized === "boolean" ? (normalized ? "✔" : "✖") : String(normalized)}
-                                </span>
-                              </li>
-                            );
-                          })}
-                        </ul>
-                      </motion.div>
-                    ))}
-                  </div>
-                </Card>
-              </motion.section>
+                {/* Por modelo */}
+                <div style={{ marginTop: 12, display: "grid", gap: 6 }}>
+                  {(() => {
+                    const scores = (data.perModelScores || {}) as Partial<Record<string, number>>;
+                    const rows: Array<[string, number | undefined]> = [
+                      ["ChatGPT", scores.chatgpt],
+                      ["Gemini", scores.gemini],
+                      ["Copilot", scores.copilot],
+                      ["Perplexity", scores.perplexity],
+                      ["Claude", scores.claude],
+                    ];
+                    return (
+                      <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "grid", gap: 6, fontSize: 14 }}>
+                        {rows.map(([label, val]) => (
+                          <li
+                            key={label}
+                            style={{
+                              display: "flex",
+                              justifyContent: "space-between",
+                              background: "rgba(255,255,255,.04)",
+                              padding: "6px 8px",
+                              borderRadius: 10,
+                            }}
+                          >
+                            <span>{label}</span>
+                            <span className={`score-chip chip-${tone(typeof val === "number" ? val : 0)}`}>
+                              {typeof val === "number" ? val : "—"}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    );
+                  })()}
+                </div>
+              </Card>
 
-              {/* DERECHA: Sugerencias por impacto */}
-              <motion.aside
-                className="extra-section"
-                initial={{ opacity: 0, y: 10 }}
+              {/* Sugerencias IA */}
+              <Card
+                as={motion.div}
+                initial={false}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.35, delay: 0.12 }}
+                transition={{ duration: 0.25 }}
+                style={{ display: "flex", flexDirection: "column", gap: 8 }}
               >
-                <Card>
-                  <div className="section-title">
-                    <div className="section-eyebrow">Optimización</div>
-                    <h2 className="section-heading">Sugerencias (por impacto)</h2>
-                    <div className="section-divider" />
-                  </div>
-                  <ul className="suggestion-list" style={{ marginTop: 10 }}>
-                    {(data.suggestions || []).map((s: any, i: number) => (
-                      <motion.li
-                        key={s.id || i}
-                        className="suggestion-item"
-                        initial={{ opacity: 0, y: 8 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.25, delay: 0.02 + i * 0.03 }}
-                        whileHover={{ x: 4 }}
-                        title={s.detail || s.title}
-                      >
-                        <div>
-                          <div style={{ fontWeight: 600 }}>{s.title}</div>
-                          {s.detail && <div className="muted small">{s.detail}</div>}
-                        </div>
-                        <div>
-                          {s.impactPts} pts · {s.effort}
-                        </div>
-                      </motion.li>
-                    ))}
-                  </ul>
-                </Card>
-              </motion.aside>
-            </div>
-
-            {/* Sugerencias Extras */}
-            {(data.extrasSuggestions?.length || 0) > 0 && (
-              <Card style={{ marginTop: 16 }}>
                 <div className="section-title">
                   <div className="section-eyebrow">Optimización</div>
-                  <h2 className="section-heading">Sugerencias Extras</h2>
+                  <h2 className="section-heading">Sugerencias para IA</h2>
                   <div className="section-divider" />
+                  <p className="section-kicker">Acciones para que los crawlers de IA entiendan mejor tu sitio.</p>
                 </div>
-                <ul style={{ listStyle: "disc", paddingLeft: 18, display: "grid", gap: 6, marginTop: 8 }}>
-                  {(data.extrasSuggestions || []).map((s, i) => (
-                    <li key={i}>
-                      <span style={{ fontWeight: 600 }}>{s.title}</span>
-                      {s.detail && <span className="muted"> — {s.detail}</span>}
-                    </li>
-                  ))}
+
+                <ul style={{ listStyle: "disc", paddingLeft: 18, marginTop: 8, display: "grid", gap: 6 }}>
+                  {Array.isArray(data.iaHints) && data.iaHints.length > 0 ? (
+                    data.iaHints.map((h: string, i: number) => <li key={i}>{h}</li>)
+                  ) : (
+                    <li style={{ opacity: 0.7 }}>Sin sugerencias específicas para IA.</li>
+                  )}
                 </ul>
               </Card>
-            )}
+            </div>
 
-            {/* Gate + botón “Contactanos” (modal) */}
+            {/* Barra de acciones */}
             <Card>
               <div
                 style={{
@@ -657,32 +377,29 @@ export default function Home() {
                   flexWrap: "wrap",
                 }}
               >
-                <div>
-                  <h3 style={{ margin: 0 }}>¿Querés subir tu puntaje?</h3>
-                  <p style={{ margin: "4px 0 0 0" }}>
-                    Con una asesoría rápida te ayudamos a implementar las mejoras clave.
-                  </p>
+                <div className="muted small">
+                  Incluye <strong>Score OAI</strong>{" "}
+                  <span className="chip small" title="Puntaje global OAI-SearchBot">Puntaje global</span>, accesibilidad para
+                  OAI-SearchBot, checklist técnico y extras.
                 </div>
-                <button
-                  type="button"
-                  className="btn-audit"
-                  onClick={() => setShowForm(true)}
-                  aria-expanded={showForm}
-                >
-                  Contactanos
-                </button>
+
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  <Link className="btn-audit" href={`/reporte?u=${encodeURIComponent(data.finalUrl || data.url || "")}`} prefetch>
+                    Ver informe completo
+                  </Link>
+
+                  <button type="button" className="btn-secondary" onClick={() => setShowForm(true)}>
+                    Contactanos para subir tu puntaje
+                  </button>
+                </div>
               </div>
             </Card>
 
             {/* Modal */}
             <Modal open={showForm} onClose={() => setShowForm(false)} labelledBy="contactanos-title">
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", gap: 10 }}>
-                <h3 id="contactanos-title" style={{ margin: 0, fontSize: 18, fontWeight: 800 }}>
-                  Contactanos
-                </h3>
-                <button type="button" className="btn-secondary" onClick={() => setShowForm(false)}>
-                  Cerrar
-                </button>
+                <h3 id="contactanos-title" style={{ margin: 0, fontSize: 18, fontWeight: 800 }}>Contactanos</h3>
+                <button type="button" className="btn-secondary" onClick={() => setShowForm(false)}>Cerrar</button>
               </div>
               <div style={{ marginTop: 12 }}>
                 <LeadCTA score={data.overall!} url={data.finalUrl || data.url!} />
@@ -695,17 +412,26 @@ export default function Home() {
       <footer className="site-footer" aria-label="Pie de página">
         <div className="footer-inner">
           DEVELOPED BY{" "}
-          <a
-            href="https://coso.ar"
-            className="brand brand-link"
-            target="_blank"
-            rel="noopener noreferrer"
-            title="Ir a coso.ar"
-          >
+          <a href="https://coso.ar" className="brand brand-link" target="_blank" rel="noopener noreferrer" title="Ir a coso.ar">
             COSO
           </a>
         </div>
       </footer>
+
+      {/* Chips pequeñas */}
+      <style jsx global>{`
+        .chip.small {
+          display: inline-block;
+          padding: 2px 6px;
+          border-radius: 999px;
+          font-size: 10px;
+          font-weight: 700;
+          background: rgba(255,255,255,.08);
+          border: 1px solid rgba(255,255,255,.18);
+          margin: 0 6px;
+          vertical-align: middle;
+        }
+      `}</style>
     </main>
   );
 }
