@@ -75,31 +75,55 @@ function useLockBody(lock: boolean) {
   useEffect(() => {
     const original = document.body.style.overflow;
     if (lock) document.body.style.overflow = "hidden";
-    return () => { document.body.style.overflow = original; };
+    return () => {
+      document.body.style.overflow = original;
+    };
   }, [lock]);
 }
 
 function Modal({
-  open, onClose, children, labelledBy,
-}: { open: boolean; onClose: () => void; children: React.ReactNode; labelledBy?: string; }) {
+  open,
+  onClose,
+  children,
+  labelledBy,
+}: {
+  open: boolean;
+  onClose: () => void;
+  children: React.ReactNode;
+  labelledBy?: string;
+}) {
   useLockBody(open);
   if (!open) return null;
   return (
     <div
-      role="dialog" aria-modal="true" aria-labelledby={labelledBy}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby={labelledBy}
       style={{
-        position: "fixed", inset: 0, zIndex: 50, display: "grid", placeItems: "center",
-        background: "rgba(0,0,0,.6)", backdropFilter: "blur(4px)",
+        position: "fixed",
+        inset: 0,
+        zIndex: 50,
+        display: "grid",
+        placeItems: "center",
+        background: "rgba(0,0,0,.6)",
+        backdropFilter: "blur(4px)",
       }}
-      onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
     >
       <div
         style={{
-          width: "min(880px, 92vw)", maxHeight: "85vh", overflow: "auto",
+          width: "min(880px, 92vw)",
+          maxHeight: "85vh",
+          overflow: "auto",
           background: "color-mix(in srgb, #ffffff 10%, transparent)",
           border: "1px solid color-mix(in srgb, #ffffff 18%, transparent)",
-          borderRadius: 18, padding: 16, color: "#fff",
-          boxShadow: "0 12px 40px rgba(0,0,0,.45)", animation: "modalIn .18s ease-out",
+          borderRadius: 18,
+          padding: 16,
+          color: "#fff",
+          boxShadow: "0 12px 40px rgba(0,0,0,.45)",
+          animation: "modalIn .18s ease-out",
         }}
       >
         {children}
@@ -121,7 +145,9 @@ const Card: React.FC<CardProps> = ({ children, style, as: Comp = "div", ...rest 
     {...rest}
     style={{
       background: "color-mix(in srgb, #ffffff 9%, transparent)",
-      color: "#fff", borderRadius: 18, padding: 12,
+      color: "#fff",
+      borderRadius: 18,
+      padding: 12,
       boxShadow: "0 8px 24px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.05)",
       border: "1px solid color-mix(in srgb, #ffffff 16%, transparent)",
       transition: "transform .2s ease, box-shadow .2s ease",
@@ -149,20 +175,32 @@ const SEARCH_CARD_STYLE: React.CSSProperties = {
 };
 
 type SearchBarProps = {
-  url: string; setUrl: (v: string) => void; loading: boolean;
-  onSubmit: (e: React.FormEvent<HTMLFormElement>) => void; error?: string | null; top?: boolean;
+  url: string;
+  setUrl: (v: string) => void;
+  loading: boolean;
+  onSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
+  error?: string | null;
+  top?: boolean;
 };
 
 const SearchBar = memo(function SearchBar({
-  url, setUrl, loading, onSubmit, error, top = false,
+  url,
+  setUrl,
+  loading,
+  onSubmit,
+  error,
+  top = false,
 }: SearchBarProps) {
   return (
     <Card style={{ ...SEARCH_CARD_STYLE, ...(top ? { marginTop: 12, marginBottom: 10 } : {}) }}>
       <form className="input-container" onSubmit={onSubmit} noValidate>
         <input
-          value={url} onChange={(e) => setUrl(e.target.value)}
+          value={url}
+          onChange={(e) => setUrl(e.target.value)}
           placeholder="https://tu-sitio.com.ar/pagina"
-          className="input-url" inputMode="url" autoComplete="off"
+          className="input-url"
+          inputMode="url"
+          autoComplete="off"
           style={{ flex: "1 1 0%", minWidth: 0 }}
         />
         <button type="submit" disabled={loading} className="btn-audit">
@@ -175,9 +213,13 @@ const SearchBar = memo(function SearchBar({
 });
 
 /* ---------------- Home ---------------- */
+const STORAGE_KEY = "auditor:last";
+
 export default function Home() {
-  const [mounted, setMounted] = useState(false);          // ← gate de montaje
-  useEffect(() => { setMounted(true); }, []);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const [url, setUrl] = useState("");
   const [data, setData] = useState<AuditResponse>({});
@@ -191,8 +233,26 @@ export default function Home() {
     Array.isArray(data.breakdown) &&
     data.breakdown.length > 0;
 
+  // Rehidratar si volvemos desde /reporte
+  useEffect(() => {
+    if (!mounted) return;
+    try {
+      const raw = sessionStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed?.data?.overall) {
+          setData(parsed.data);
+          setUrl(parsed.url || "");
+        }
+      }
+    } catch {}
+  }, [mounted]);
+
   const audit = async () => {
-    setLoading(true); setErr(null); setData({}); setShowForm(false);
+    setLoading(true);
+    setErr(null);
+    setData({});
+    setShowForm(false);
     try {
       const safeUrl = normalizeUrl(url);
       const r = await fetch(`/api/audit?url=${encodeURIComponent(safeUrl)}`);
@@ -202,9 +262,19 @@ export default function Home() {
       }
       const j = (await r.json()) as AuditResponse;
       setData(j);
+
+      // Guardar último resultado para recuperar al volver de /reporte
+      try {
+        sessionStorage.setItem(
+          STORAGE_KEY,
+          JSON.stringify({ data: j, url: j.finalUrl || j.url || safeUrl })
+        );
+      } catch {}
     } catch (e: any) {
       setErr(e?.message || "Ocurrió un error inesperado.");
-    } finally { setLoading(false); }
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -217,13 +287,14 @@ export default function Home() {
     audit();
   };
 
-  // SSR-safe skeleton (mismo header; sin motion hasta montar)
   if (!mounted) {
     return (
       <main className="main-container" style={{ color: "#fff" }}>
         <header className="header">
           <div className="header-content">
-            <h1 className="title-glitch" data-text="IA Friendly">IA Friendly</h1>
+            <h1 className="title-glitch" data-text="IA Friendly">
+              IA Friendly
+            </h1>
           </div>
         </header>
         <div className="content-container" />
@@ -233,30 +304,36 @@ export default function Home() {
 
   return (
     <main className="main-container" style={{ color: "#fff" }}>
-      {/* Header (motion sin initial distinto en SSR) */}
       <motion.header
         className="header"
-        initial={false}                          // ✅ evita mismatch
+        initial={false}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.35 }}
       >
         <div className="header-content">
-          <h1 className="title-glitch" data-text="IA Friendly">IA Friendly</h1>
+          <h1 className="title-glitch" data-text="IA Friendly">
+            IA Friendly
+          </h1>
         </div>
       </motion.header>
 
       <div className="content-container">
-        {/* ======= ESTADO INICIAL: BUSCADOR CENTRADO ======= */}
         {!hasResult ? (
           <div
             style={{
               display: "grid",
               placeItems: "center",
-              minHeight: "calc(100dvh - 160px)", // centrado vertical real
+              minHeight: "calc(100dvh - 160px)", // centrado real (no se toca)
               padding: "12px 0",
             }}
           >
-            <SearchBar url={url} setUrl={setUrl} loading={loading} onSubmit={handleSubmit} error={err} />
+            <SearchBar
+              url={url}
+              setUrl={setUrl}
+              loading={loading}
+              onSubmit={handleSubmit}
+              error={err}
+            />
           </div>
         ) : (
           <>
@@ -265,11 +342,11 @@ export default function Home() {
           </>
         )}
 
-        {/* ======= RESULTADOS ======= */}
         {hasResult && (
           <div ref={reportRef} style={{ display: "grid", gap: 16 }}>
+            {/* === RESULTADOS (resumen) === */}
             <div className="two-col-md">
-              {/* Preparación IA */}
+              {/* Preparación IA (Índice técnico) */}
               <Card
                 as={motion.div}
                 initial={false}
@@ -281,11 +358,14 @@ export default function Home() {
                   <div className="section-eyebrow">Resultados</div>
                   <h2 className="section-heading">
                     Preparación para IA{" "}
-                    <span className="chip small" title="Índice técnico por modelo">Índice técnico</span>{" "}
+                    <span className="chip small" title="Índice técnico por modelo">
+                      Índice técnico
+                    </span>{" "}
                   </h2>
                   <div className="section-divider" />
                   <p className="section-kicker">
-                    Qué tan listo está tu sitio (0–100) para que los modelos entiendan tu contenido.
+                    Qué tan listo está tu sitio (0–100) para que los modelos entiendan tu
+                    contenido.
                   </p>
                 </div>
 
@@ -293,7 +373,9 @@ export default function Home() {
                   <div className="score-header" style={{ marginTop: 10 }}>
                     <div className="score-value" style={{ marginBottom: 6 }}>
                       Preparación global:{" "}
-                      <span className={`score-chip chip-${tone(data.iaReadiness)}`}>{data.iaReadiness}</span>
+                      <span className={`score-chip chip-${tone(data.iaReadiness)}`}>
+                        {data.iaReadiness}
+                      </span>
                       /100
                     </div>
                     <div className="score-bar">
@@ -308,7 +390,9 @@ export default function Home() {
                 {/* Por modelo */}
                 <div style={{ marginTop: 12, display: "grid", gap: 6 }}>
                   {(() => {
-                    const scores = (data.perModelScores || {}) as Partial<Record<string, number>>;
+                    const scores = (data.perModelScores || {}) as Partial<
+                      Record<string, number>
+                    >;
                     const rows: Array<[string, number | undefined]> = [
                       ["ChatGPT", scores.chatgpt],
                       ["Gemini", scores.gemini],
@@ -317,7 +401,16 @@ export default function Home() {
                       ["Claude", scores.claude],
                     ];
                     return (
-                      <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "grid", gap: 6, fontSize: 14 }}>
+                      <ul
+                        style={{
+                          listStyle: "none",
+                          padding: 0,
+                          margin: 0,
+                          display: "grid",
+                          gap: 6,
+                          fontSize: 14,
+                        }}
+                      >
                         {rows.map(([label, val]) => (
                           <li
                             key={label}
@@ -330,7 +423,11 @@ export default function Home() {
                             }}
                           >
                             <span>{label}</span>
-                            <span className={`score-chip chip-${tone(typeof val === "number" ? val : 0)}`}>
+                            <span
+                              className={`score-chip chip-${tone(
+                                typeof val === "number" ? val : 0
+                              )}`}
+                            >
                               {typeof val === "number" ? val : "—"}
                             </span>
                           </li>
@@ -353,10 +450,20 @@ export default function Home() {
                   <div className="section-eyebrow">Optimización</div>
                   <h2 className="section-heading">Sugerencias para IA</h2>
                   <div className="section-divider" />
-                  <p className="section-kicker">Acciones para que los crawlers de IA entiendan mejor tu sitio.</p>
+                  <p className="section-kicker">
+                    Acciones para que los crawlers de IA entiendan mejor tu sitio.
+                  </p>
                 </div>
 
-                <ul style={{ listStyle: "disc", paddingLeft: 18, marginTop: 8, display: "grid", gap: 6 }}>
+                <ul
+                  style={{
+                    listStyle: "disc",
+                    paddingLeft: 18,
+                    marginTop: 8,
+                    display: "grid",
+                    gap: 6,
+                  }}
+                >
                   {Array.isArray(data.iaHints) && data.iaHints.length > 0 ? (
                     data.iaHints.map((h: string, i: number) => <li key={i}>{h}</li>)
                   ) : (
@@ -366,7 +473,7 @@ export default function Home() {
               </Card>
             </div>
 
-            {/* Barra de acciones */}
+            {/* === BARRA DE ACCIONES === */}
             <Card>
               <div
                 style={{
@@ -379,16 +486,39 @@ export default function Home() {
               >
                 <div className="muted small">
                   Incluye <strong>Score OAI</strong>{" "}
-                  <span className="chip small" title="Puntaje global OAI-SearchBot">Puntaje global</span>, accesibilidad para
-                  OAI-SearchBot, checklist técnico y extras.
+                  <span className="chip small" title="Puntaje global OAI-SearchBot">
+                    Puntaje global
+                  </span>
+                  , accesibilidad para OAI-SearchBot, checklist técnico y extras.
                 </div>
 
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                  <Link className="btn-audit" href={`/reporte?u=${encodeURIComponent(data.finalUrl || data.url || "")}`} prefetch>
+                  <Link
+                    className="btn-audit"
+                    href={`/reporte?u=${encodeURIComponent(
+                      data.finalUrl || data.url || url
+                    )}`}
+                    prefetch
+                    onClick={() => {
+                      try {
+                        sessionStorage.setItem(
+                          STORAGE_KEY,
+                          JSON.stringify({
+                            data,
+                            url: data.finalUrl || data.url || url,
+                          })
+                        );
+                      } catch {}
+                    }}
+                  >
                     Ver informe completo
                   </Link>
 
-                  <button type="button" className="btn-secondary" onClick={() => setShowForm(true)}>
+                  <button
+                    type="button"
+                    className="btn-secondary"
+                    onClick={() => setShowForm(true)}
+                  >
                     Contactanos para subir tu puntaje
                   </button>
                 </div>
@@ -396,10 +526,29 @@ export default function Home() {
             </Card>
 
             {/* Modal */}
-            <Modal open={showForm} onClose={() => setShowForm(false)} labelledBy="contactanos-title">
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", gap: 10 }}>
-                <h3 id="contactanos-title" style={{ margin: 0, fontSize: 18, fontWeight: 800 }}>Contactanos</h3>
-                <button type="button" className="btn-secondary" onClick={() => setShowForm(false)}>Cerrar</button>
+            <Modal
+              open={showForm}
+              onClose={() => setShowForm(false)}
+              labelledBy="contactanos-title"
+            >
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "start",
+                  gap: 10,
+                }}
+              >
+                <h3 id="contactanos-title" style={{ margin: 0, fontSize: 18, fontWeight: 800 }}>
+                  Contactanos
+                </h3>
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  onClick={() => setShowForm(false)}
+                >
+                  Cerrar
+                </button>
               </div>
               <div style={{ marginTop: 12 }}>
                 <LeadCTA score={data.overall!} url={data.finalUrl || data.url!} />
@@ -412,13 +561,18 @@ export default function Home() {
       <footer className="site-footer" aria-label="Pie de página">
         <div className="footer-inner">
           DEVELOPED BY{" "}
-          <a href="https://coso.ar" className="brand brand-link" target="_blank" rel="noopener noreferrer" title="Ir a coso.ar">
+          <a
+            href="https://coso.ar"
+            className="brand brand-link"
+            target="_blank"
+            rel="noopener noreferrer"
+            title="Ir a coso.ar"
+          >
             COSO
           </a>
         </div>
       </footer>
 
-      {/* Chips pequeñas */}
       <style jsx global>{`
         .chip.small {
           display: inline-block;
@@ -426,8 +580,8 @@ export default function Home() {
           border-radius: 999px;
           font-size: 10px;
           font-weight: 700;
-          background: rgba(255,255,255,.08);
-          border: 1px solid rgba(255,255,255,.18);
+          background: rgba(255, 255, 255, 0.08);
+          border: 1px solid rgba(255, 255, 255, 0.18);
           margin: 0 6px;
           vertical-align: middle;
         }
