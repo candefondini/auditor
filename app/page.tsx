@@ -323,7 +323,7 @@ export default function Home() {
             style={{
               display: "grid",
               placeItems: "center",
-              minHeight: "calc(100dvh - 160px)", // centrado real (no se toca)
+              minHeight: "calc(100dvh - 160px)",
               padding: "12px 0",
             }}
           >
@@ -514,7 +514,9 @@ export default function Home() {
                     Ver informe completo
                   </Link>
 
+                  {/* ⚠️ Botón con ID para GTM */}
                   <button
+                    id="contactanos-btn"
                     type="button"
                     className="btn-secondary"
                     onClick={() => setShowForm(true)}
