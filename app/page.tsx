@@ -558,7 +558,12 @@ export default function Home() {
               <div id="leadcta-container" style={{ marginTop: 12 }}>
                 {/* Desde GTM podés capturar el click a WhatsApp
                    usando "Click URL contiene wa.me" dentro de este contenedor */}
-                <LeadCTA score={data.overall!} url={data.finalUrl || data.url!} />
+                <LeadCTA
+  oaiScore={data.overall!}
+  iaScore={data.iaReadiness}
+  url={data.finalUrl || data.url!}
+/>
+
               </div>
             </Modal>
           </div>
