@@ -193,8 +193,9 @@ const SearchBar = memo(function SearchBar({
 }: SearchBarProps) {
   return (
     <Card style={{ ...SEARCH_CARD_STYLE, ...(top ? { marginTop: 12, marginBottom: 10 } : {}) }}>
-      <form className="input-container" onSubmit={onSubmit} noValidate>
+      <form className="input-container" onSubmit={onSubmit} noValidate id="auditar-form">
         <input
+          id="url-input"
           value={url}
           onChange={(e) => setUrl(e.target.value)}
           placeholder="https://tu-sitio.com.ar/pagina"
@@ -203,7 +204,7 @@ const SearchBar = memo(function SearchBar({
           autoComplete="off"
           style={{ flex: "1 1 0%", minWidth: 0 }}
         />
-        <button type="submit" disabled={loading} className="btn-audit">
+        <button id="auditar-btn" type="submit" disabled={loading} className="btn-audit">
           {loading ? "Auditando..." : "Auditar"}
         </button>
       </form>
@@ -494,6 +495,7 @@ export default function Home() {
 
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                   <Link
+                    id="ver-informe-btn"
                     className="btn-audit"
                     href={`/reporte?u=${encodeURIComponent(
                       data.finalUrl || data.url || url
@@ -545,6 +547,7 @@ export default function Home() {
                   Contactanos
                 </h3>
                 <button
+                  id="modal-cerrar-btn"
                   type="button"
                   className="btn-secondary"
                   onClick={() => setShowForm(false)}
@@ -552,7 +555,9 @@ export default function Home() {
                   Cerrar
                 </button>
               </div>
-              <div style={{ marginTop: 12 }}>
+              <div id="leadcta-container" style={{ marginTop: 12 }}>
+                {/* Desde GTM podés capturar el click a WhatsApp
+                   usando "Click URL contiene wa.me" dentro de este contenedor */}
                 <LeadCTA score={data.overall!} url={data.finalUrl || data.url!} />
               </div>
             </Modal>
@@ -564,6 +569,7 @@ export default function Home() {
         <div className="footer-inner">
           DEVELOPED BY{" "}
           <a
+            id="coso-link"
             href="https://coso.ar"
             className="brand brand-link"
             target="_blank"
